@@ -9,8 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-const { Response } = require('@adobe/helix-fetch');
-const { utils } = require('@adobe/helix-shared');
 const { fetch, getFetchOptions } = require('./utils.js');
 
 /**
@@ -43,6 +41,7 @@ async function contentProxy(opts) {
 
   url.searchParams.append('rid', options.requestId);
 
+  log.info(`Fetching content from: ${url.href}`);
   await fetch(url.href, getFetchOptions(options));
 }
 
