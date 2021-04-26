@@ -75,8 +75,8 @@ jobs:
       # for more available parameters
       - helix-post-deploy/monitoring:
           statuspage_name: Helix Content Bus
-          statuspage_group: Delivery
-          newrelic_group_policy: Delivery Repeated Failure
+          statuspage_group: Publishing
+          newrelic_group_policy: Publishing Repeated Failure
           incubator: true # remove only when promoting service to production
 
   branch-deploy:

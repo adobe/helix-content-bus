@@ -43,33 +43,7 @@ async function contentProxy(opts) {
 
   url.searchParams.append('rid', options.requestId);
 
-  const response = await fetch(url.href, getFetchOptions(options));
-  const body = await response.text();
-  if (response.ok) {
-    const headers = {
-      'x-source-location': response.headers.get('x-source-location'),
-      'surrogate-key': utils.computeSurrogateKey(response.headers.get('x-source-location')),
-      'cache-control': 'no-store, private',
-      'surrogate-control': 'max-age=30758400, stale-while-revalidate=30758400, stale-if-error=30758400, immutable',
-    };
-    const lastModified = response.headers.get('last-modified');
-    if (lastModified) {
-      headers['last-modified'] = lastModified;
-    }
-    return new Response(body, {
-      status: 200,
-      headers,
-    });
-  }
-  log[utils.logLevelForStatusCode(response.status)](`Unable to fetch ${url.href} (${response.status}) from content-proxy: ${body}`);
-  return new Response(body, {
-    status: utils.propagateStatusCode(response.status),
-    headers: {
-      'x-error': response.headers.get('x-error'),
-      vary: response.headers.get('vary'),
-      'cache-control': 'max-age=60',
-    },
-  });
+  await fetch(url.href, getFetchOptions(options));
 }
 
 module.exports = {
