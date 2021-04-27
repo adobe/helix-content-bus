@@ -14,7 +14,9 @@
 
 const assert = require('assert');
 const proxyquire = require('proxyquire');
+const { condit } = require('@adobe/helix-testutils');
 
+const { main: universalMain } = require('../src/index.js');
 const { retrofit } = require('./utils.js');
 
 /**
@@ -22,14 +24,13 @@ const { retrofit } = require('./utils.js');
  *
  * @param {Function} invoke OW action to invoke
  */
-const { main: universalMain } = proxyquire('../src/index.js', {
+const { main: proxyMain } = proxyquire('../src/index.js', {
   './content-proxy.js': { contentProxy: async (opts) => opts },
 });
 
-const main = retrofit(universalMain);
-
 describe('Index Tests', () => {
   it('index function returns 400 if owner/repo/ref/path is missing', async () => {
+    const main = retrofit(proxyMain);
     assert.strictEqual((await main({})).statusCode, 400);
     assert.strictEqual((await main({
       owner: 'foo',
@@ -41,7 +42,19 @@ describe('Index Tests', () => {
     assert.strictEqual((await main({
       owner: 'foo',
       repo: 'bar',
-      ref: 'baz',
+      path: 'baz',
     })).statusCode, 400);
   });
+
+  condit('actual invocation', condit.hasenvs(['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']), async () => {
+    const main = retrofit(universalMain);
+    const params = {
+      owner: 'adobe',
+      repo: 'theblog',
+      ref: 'master',
+      path: '/en/publish/2020/11/02/high-tech-companies-can-deliver-successful-cx-with-ml-real-time-data.md',
+    };
+    const res = await main(params);
+    assert.strictEqual(res.statusCode, 200);
+  }).timeout(20000);
 });

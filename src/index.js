@@ -9,13 +9,14 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-const { wrap } = require('@adobe/helix-shared');
 const { AbortError, FetchError } = require('@adobe/helix-fetch');
 const { logger } = require('@adobe/helix-universal-logger');
+const { requiredConfig, wrap } = require('@adobe/helix-shared');
 const { wrap: helixStatus } = require('@adobe/helix-status');
 const { Response } = require('@adobe/helix-universal');
 
 const { contentProxy } = require('./content-proxy.js');
+const { AWSStorage } = require('./storage.js');
 
 /**
  * Fetches content from content-proxy and stores it in an S3 bucket.
@@ -27,8 +28,8 @@ const { contentProxy } = require('./content-proxy.js');
 async function main(req, context) {
   const { env, log, resolver } = context;
   const {
+    AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
     HTTP_TIMEOUT_EXTERNAL,
-    __OW_NAMESPACE: namespace = 'helix',
   } = env;
   const { searchParams } = new URL(req.url);
   const params = Object.fromEntries(searchParams.entries());
@@ -42,6 +43,29 @@ async function main(req, context) {
     });
   }
 
+  const mp = context.config.fstab.match(path);
+  if (!mp) {
+    return new Response(`path specified is not mounted in fstab.yaml: ${path}`, {
+      status: 400,
+    });
+  }
+
+  let storage;
+
+  try {
+    storage = new AWSStorage({
+      AWS_REGION,
+      AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY,
+      mount: mp,
+      log,
+    });
+  } catch (e) {
+    return new Response(`Unable to create AWSStorage: ${e.message}`, {
+      status: 400,
+    });
+  }
+
   const options = {
     cache: 'no-store',
     fetchTimeout: HTTP_TIMEOUT_EXTERNAL || 20000,
@@ -49,14 +73,19 @@ async function main(req, context) {
     || req.headers.get('x-cdn-request-id')
     || req.headers.get('x-openwhisk-activation-id')
     || '',
-    namespace,
   };
 
   try {
     const res = await contentProxy({
       owner, repo, ref, path, log, options, resolver,
     });
-    return res;
+    if (!res.ok) {
+      return res;
+    }
+    const output = await storage.store(null, path, res);
+    return new Response(JSON.stringify(output, null, 2), {
+      status: 200,
+    });
   } catch (e) {
     if (e instanceof AbortError) {
       return new Response(e.message, {
@@ -85,6 +114,7 @@ async function main(req, context) {
 }
 
 module.exports.main = wrap(main)
+  .with(requiredConfig, 'fstab')
   .with(helixStatus)
   .with(logger.trace)
   .with(logger);

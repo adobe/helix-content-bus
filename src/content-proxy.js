@@ -9,6 +9,8 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+const { Response } = require('@adobe/helix-fetch');
+const { utils } = require('@adobe/helix-shared');
 const { fetch, getFetchOptions } = require('./utils.js');
 
 /**
@@ -42,7 +44,23 @@ async function contentProxy(opts) {
   url.searchParams.append('rid', options.requestId);
 
   log.info(`Fetching content from: ${url.href}`);
-  await fetch(url.href, getFetchOptions(options));
+  const response = await fetch(url.href, getFetchOptions(options));
+  const body = await response.text();
+  if (response.ok) {
+    return new Response(body, {
+      status: 200,
+      headers: response.headers,
+    });
+  }
+  log[utils.logLevelForStatusCode(response.status)](`Unable to fetch ${url.href} (${response.status}) from content-proxy: ${body}`);
+  return new Response(body, {
+    status: utils.propagateStatusCode(response.status),
+    headers: {
+      'x-error': response.headers.get('x-error'),
+      vary: response.headers.get('vary'),
+      'cache-control': 'max-age=60',
+    },
+  });
 }
 
 module.exports = {
