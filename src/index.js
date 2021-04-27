@@ -31,11 +31,7 @@ async function main(req, context) {
     __OW_NAMESPACE: namespace = 'helix',
   } = env;
   const { searchParams } = new URL(req.url);
-  const params = Array.from(searchParams.entries()).reduce((p, [key, value]) => {
-    // eslint-disable-next-line no-param-reassign
-    p[key] = value;
-    return p;
-  }, {});
+  const params = Object.fromEntries(searchParams.entries());
   const {
     owner, repo, ref, path,
   } = params;
