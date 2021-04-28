@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/adobe/helix-content-bus/compare/v1.0.0...v1.0.1) (2021-04-28)
+
+
+### Bug Fixes
+
+* change AWS_ to AWS_S3_ ([d96df04](https://github.com/adobe/helix-content-bus/commit/d96df049a83fd33f5e706f34eb7301aefe121199))
+
 # 1.0.0 (2021-04-28)
 
 
