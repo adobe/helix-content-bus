@@ -32,7 +32,7 @@ const { retrofit } = require('./utils.js');
 const SPEC_ROOT = resolve(__dirname, 'specs');
 
 class AWSStorageMock extends AWSStorage {
-  // eslint-disable-next-line class-methods-use-this
+  // eslint-disable-next-line class-methods-use-this, no-empty-function
   async store() {}
 }
 
