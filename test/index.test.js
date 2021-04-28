@@ -115,7 +115,7 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 200);
   });
 
-  it('call index function with an non-existing path', async () => {
+  it('call index function with a non-existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -129,8 +129,10 @@ describe('Index Tests', () => {
     });
     assert.strictEqual(res.statusCode, 404);
   });
+});
 
-  condit('live invocation', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+describe('Live Tests', () => {
+  condit('Store theblog', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
     const main = retrofit(universalMain);
     const res = await main({
       owner: 'adobe',

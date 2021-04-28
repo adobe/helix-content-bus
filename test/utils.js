@@ -16,7 +16,7 @@ const querystring = require('querystring');
 
 function retrofit(fn) {
   const resolver = {
-    createURL({ pkg, name, version }) {
+    createURL({ package: pkg, name, version }) {
       return new URL(`https://adobeioruntime.net/api/v1/web/helix/${pkg}/${name}@${version}`);
     },
   };

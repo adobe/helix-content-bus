@@ -15,8 +15,18 @@
 const crypto = require('crypto');
 const {
   S3Client,
+  CreateBucketCommand,
+  GetBucketTaggingCommand,
+  HeadBucketCommand,
+  PutBucketTaggingCommand,
   PutObjectCommand,
+  PutPublicAccessBlockCommand,
 } = require('@aws-sdk/client-s3');
+
+/**
+ * Template bucket we use for copying the tags.
+ */
+const TEMPLATE_BUCKET = 'helix-content-bus-template';
 
 /**
  * AWS Storage class
@@ -46,23 +56,104 @@ class AWSStorage {
       .createHash('sha256')
       .update(mount.url)
       .digest('hex');
-    this._bucket = `h3${sha256.substr(0, 60)}`;
+
+    this._bucket = `h3${sha256.substr(0, 59)}`;
+    this._region = region;
+    this._mountUrl = mount.url;
     this._log = log;
   }
 
-  async store(path, res) {
+  async _bucketExists() {
+    try {
+      await this.client.send(new HeadBucketCommand({
+        Bucket: this._bucket,
+      }));
+      return true;
+    } catch (e) {
+      /* istanbul ignore next */
+      if (e.$metadata.httpStatusCode !== 404) {
+        throw e;
+      }
+      return false;
+    }
+  }
+
+  async _bucketCreate() {
+    const { log } = this;
+    let tags;
+
+    try {
+      const result = await this.client.send(new GetBucketTaggingCommand({
+        Bucket: TEMPLATE_BUCKET,
+      }));
+      tags = result.TagSet;
+    } catch (e) {
+      log.error(`Unable to obtain default tags from template bucket: ${this.bucket}`, e);
+      throw e;
+    }
+
+    // Create the new bucket
+    await this.client.send(new CreateBucketCommand({
+      Bucket: this._bucket,
+    }));
+
+    // Block public access
+    await this.client.send(new PutPublicAccessBlockCommand({
+      Bucket: this._bucket,
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        IgnorePublicAcls: true,
+        BlockPublicPolicy: true,
+        RestrictPublicBuckets: true,
+      },
+    }));
+
+    // Put required tags
+    tags.push({ Key: 'mountpoint', Value: decodeURI(this._mountUrl) });
+    await this.client.send(new PutBucketTaggingCommand({
+      Bucket: this._bucket,
+      Tagging: {
+        TagSet: tags,
+      },
+    }));
+    log.info(`Bucket created: ${this.bucket}`);
+  }
+
+  async _init() {
+    if (this._initialized) {
+      return;
+    }
+
+    const exists = await this._bucketExists();
+    if (!exists) {
+      await this._bucketCreate();
+    }
+    this._initialized = true;
+  }
+
+  async store(prefix, path, res) {
+    await this._init();
+
     const { log } = this;
     const body = await res.buffer();
+    const key = `${prefix}${path}`;
 
-    const input = {
+    const result = await this.client.send(new PutObjectCommand({
       Body: body,
       Bucket: this.bucket,
       ContentType: res.headers.get('content-type'),
-      Key: path,
-    };
-    const output = await this._s3.send(new PutObjectCommand(input));
-    log.info(`Object uploaded to: ${this.bucket}${path} (${JSON.stringify(output)})`);
-    return output;
+      Key: key,
+    }));
+    log.info(`Object uploaded to: ${this.bucket}/${key}`);
+    return result;
+  }
+
+  close() {
+    this.client.destroy();
+  }
+
+  get client() {
+    return this._s3;
   }
 
   get bucket() {
