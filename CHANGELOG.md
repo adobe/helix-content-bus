@@ -1,3 +1,19 @@
+# 1.0.0 (2021-04-28)
+
+
+### Bug Fixes
+
+* add AWS storage ([4164344](https://github.com/adobe/helix-content-bus/commit/416434406f956d2bf6ae81fb672228019854be19))
+* add file ([0b3c00b](https://github.com/adobe/helix-content-bus/commit/0b3c00bd8f3d357b6ff4fb72eb1f2c7dc312701d))
+* add more coverage ([8b657ba](https://github.com/adobe/helix-content-bus/commit/8b657bad73cdce3f723d9690e35a26eb4d0227f0))
+* empty method ([f9b1268](https://github.com/adobe/helix-content-bus/commit/f9b1268657eb6d579ad18a2160ba1e2817a16a27))
+* finished test coverage ([573af57](https://github.com/adobe/helix-content-bus/commit/573af5731cbdf6b699c8ffbd8abc079310fa0449))
+* increase coverage ([516ce56](https://github.com/adobe/helix-content-bus/commit/516ce56a6e68b92e4a111ff3790ab733bf4200e5))
+* **deps:** pin dependency @adobe/helix-fetch to 2.2.0 ([#2](https://github.com/adobe/helix-content-bus/issues/2)) ([652a733](https://github.com/adobe/helix-content-bus/commit/652a733eac78030ffcd557202dd492b72b74a32e))
+* initial commit ([d6c1ebd](https://github.com/adobe/helix-content-bus/commit/d6c1ebdc33eff5c669535ad200cbe391792c1a0e))
+* remove obsolete requires ([30a3783](https://github.com/adobe/helix-content-bus/commit/30a37832ae84b4f8255d2221a7f20612ce0c4604))
+* service falls under Publishing ([6ac696a](https://github.com/adobe/helix-content-bus/commit/6ac696a515ae5fab822308753f30b5350e149df1))
+
 ## [2.0.7](https://github.com/adobe/helix-service/compare/v2.0.6...v2.0.7) (2021-04-15)
 
 
