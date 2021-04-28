@@ -26,17 +26,11 @@ class AWSStorage {
       AWS_ACCESS_KEY_ID: accessKeyId,
       AWS_SECRET_ACCESS_KEY: secretAccessKey,
       mount,
-      log,
+      log = console,
     } = opts;
 
-    if (!region) {
-      throw new Error('AWS_REGION missing.');
-    }
-    if (!accessKeyId) {
-      throw new Error('AWS_ACCESS_KEY_ID missing.');
-    }
-    if (!secretAccessKey) {
-      throw new Error('AWS_SECRET_ACCESS_KEY missing.');
+    if (!(region && accessKeyId && secretAccessKey)) {
+      throw new Error('AWS_REGION, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required.');
     }
 
     this._s3 = new S3Client({

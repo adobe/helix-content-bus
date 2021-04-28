@@ -12,12 +12,21 @@
 
 /* eslint-env mocha */
 
+'use strict';
+
+process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
+
 const assert = require('assert');
+const fs = require('fs');
+const nock = require('nock');
+const { basename, resolve } = require('path');
 const proxyquire = require('proxyquire');
 const { condit } = require('@adobe/helix-testutils');
 
 const { main: universalMain } = require('../src/index.js');
 const { retrofit } = require('./utils.js');
+
+const SPEC_ROOT = resolve(__dirname, 'specs');
 
 /**
  * Proxy our action and its requirements.
@@ -29,21 +38,40 @@ const { main: proxyMain } = proxyquire('../src/index.js', {
 });
 
 describe('Index Tests', () => {
-  it('index function returns 400 if owner/repo/ref/path is missing', async () => {
+  before(async () => {
+    nock('https://raw.githubusercontent.com')
+      .get((uri) => uri.startsWith('/foo/bar/baz'))
+      .reply((uri) => {
+        const path = resolve(SPEC_ROOT, basename(uri));
+        if (!fs.existsSync(path)) {
+          return [404, `File not found: ${path}`];
+        }
+        return [200, fs.readFileSync(path, 'utf-8')];
+      })
+      .persist();
+  });
+
+  it('index function returns 400 if path is missing', async () => {
     const main = retrofit(proxyMain);
-    assert.strictEqual((await main({})).statusCode, 400);
-    assert.strictEqual((await main({
-      owner: 'foo',
-    })).statusCode, 400);
-    assert.strictEqual((await main({
+    const res = await main({
       owner: 'foo',
       repo: 'bar',
-    })).statusCode, 400);
-    assert.strictEqual((await main({
+      ref: 'baz',
+    });
+    assert.strictEqual(res.statusCode, 400);
+    assert.match(res.body, /required/);
+  });
+
+  it('index function returns 400 if no mountpoint matches path', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
       owner: 'foo',
       repo: 'bar',
-      path: 'baz',
-    })).statusCode, 400);
+      ref: 'baz',
+      path: '/outside/page.html',
+    });
+    assert.strictEqual(res.statusCode, 400);
+    assert.match(res.body, /not mounted/);
   });
 
   condit('actual invocation', condit.hasenvs(['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']), async () => {
@@ -54,7 +82,7 @@ describe('Index Tests', () => {
       ref: 'master',
       path: '/en/publish/2020/11/02/high-tech-companies-can-deliver-successful-cx-with-ml-real-time-data.md',
     };
-    const res = await main(params);
+    const res = await retrofit(main(params));
     assert.strictEqual(res.statusCode, 200);
   }).timeout(20000);
 });
