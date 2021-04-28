@@ -31,7 +31,7 @@ const { AWSStorage } = require('./storage.js');
 async function main(req, context) {
   const { env, log, resolver } = context;
   const {
-    AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+    AWS_S3_REGION, AWS_S3_ACCESS_KEY_ID, AWS_S3_SECRET_ACCESS_KEY,
     HTTP_TIMEOUT_EXTERNAL,
   } = env;
   const { searchParams } = new URL(req.url);
@@ -64,9 +64,9 @@ async function main(req, context) {
 
   try {
     const storage = new AWSStorage({
-      AWS_REGION,
-      AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY,
+      AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY,
       mount: mp,
       log,
     });
@@ -77,7 +77,7 @@ async function main(req, context) {
     if (!res.ok) {
       return res;
     }
-    const output = await storage.store(null, path, res);
+    const output = await storage.store(path, res);
     return new Response(JSON.stringify(output, null, 2), {
       status: 200,
     });

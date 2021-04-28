@@ -39,18 +39,18 @@ describe('Storage Tests', () => {
   it('constructor throws if required parameters are missing', async () => {
     assert.throws(() => new AWSStorage({}), /required/);
     assert.throws(() => new AWSStorage({
-      AWS_REGION: 'foo',
+      AWS_S3_REGION: 'foo',
     }), /required/);
     assert.throws(() => new AWSStorage({
-      AWS_REGION: 'foo',
-      AWS_ACCESS_KEY_ID: 'bar',
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
     }), /required/);
   });
   it('actual', async () => {
     const storage = new AWSStorage({
-      AWS_REGION: 'foo',
-      AWS_ACCESS_KEY_ID: 'bar',
-      AWS_SECRET_ACCESS_KEY: 'baz',
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
       mount: { url: 'mymount' },
     });
     await assert.doesNotReject(() => storage.store(

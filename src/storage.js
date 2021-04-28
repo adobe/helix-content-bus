@@ -24,15 +24,15 @@ const {
 class AWSStorage {
   constructor(opts) {
     const {
-      AWS_REGION: region,
-      AWS_ACCESS_KEY_ID: accessKeyId,
-      AWS_SECRET_ACCESS_KEY: secretAccessKey,
+      AWS_S3_REGION: region,
+      AWS_S3_ACCESS_KEY_ID: accessKeyId,
+      AWS_S3_SECRET_ACCESS_KEY: secretAccessKey,
       mount,
       log = console,
     } = opts;
 
     if (!(region && accessKeyId && secretAccessKey)) {
-      throw new Error('AWS_REGION, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required.');
+      throw new Error('AWS_S3_REGION, AWS_S3_ACCESS_KEY_ID and AWS_S3_SECRET_ACCESS_KEY are required.');
     }
 
     this._s3 = new S3Client({
@@ -52,10 +52,10 @@ class AWSStorage {
 
   async store(path, res) {
     const { log } = this;
-    const text = await res.text();
+    const body = await res.buffer();
 
     const input = {
-      Body: text,
+      Body: body,
       Bucket: this.bucket,
       ContentType: res.headers.get('content-type'),
       Key: path,

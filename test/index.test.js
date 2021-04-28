@@ -108,9 +108,9 @@ describe('Index Tests', () => {
       ref: 'baz',
       path: '/mnt/example-post.md',
     }, {
-      AWS_REGION: 'foo',
-      AWS_ACCESS_KEY_ID: 'bar',
-      AWS_SECRET_ACCESS_KEY: 'baz',
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
     });
     assert.strictEqual(res.statusCode, 200);
   });
@@ -123,22 +123,25 @@ describe('Index Tests', () => {
       ref: 'baz',
       path: '/mnt/missing.md',
     }, {
-      AWS_REGION: 'foo',
-      AWS_ACCESS_KEY_ID: 'bar',
-      AWS_SECRET_ACCESS_KEY: 'baz',
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
     });
     assert.strictEqual(res.statusCode, 404);
   });
 
-  condit('live invocation', condit.hasenvs(['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']), async () => {
+  condit('live invocation', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
     const main = retrofit(universalMain);
-    const params = {
+    const res = await main({
       owner: 'adobe',
       repo: 'theblog',
       ref: 'master',
       path: '/en/publish/2020/11/02/high-tech-companies-can-deliver-successful-cx-with-ml-real-time-data.md',
-    };
-    const res = await retrofit(main(params));
+    }, {
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+    });
     assert.strictEqual(res.statusCode, 200);
   }).timeout(20000);
 });

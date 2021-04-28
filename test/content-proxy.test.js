@@ -31,14 +31,14 @@ describe('Content Proxy Tests', () => {
     nock('https://adobeioruntime.net')
       .get((uri) => uri.startsWith('/api/v1/web/helix'))
       .reply((uri) => {
-        const pathParam = new URLSearchParams(uri.substr(uri.indexOf('?') + 1)).get('path');
-        if (pathParam) {
-          const path = resolve(SPEC_ROOT, basename(pathParam));
-          if (fs.existsSync(path)) {
-            return [200, fs.readFileSync(path, 'utf-8')];
+        const path = new URLSearchParams(uri.substr(uri.indexOf('?') + 1)).get('path');
+        if (path) {
+          const fsPath = resolve(SPEC_ROOT, basename(path));
+          if (fs.existsSync(fsPath)) {
+            return [200, fs.readFileSync(fsPath, 'utf-8')];
           }
         }
-        return [404, `File not found: ${pathParam}`];
+        return [404, `File not found: ${path}`];
       })
       .persist();
   });
