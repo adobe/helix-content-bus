@@ -9,6 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
+'use strict';
+
 /* eslint-disable no-param-reassign */
 const fetchAPI = require('@adobe/helix-fetch');
 
@@ -20,18 +23,6 @@ const { fetch, timeoutSignal } = process.env.HELIX_FETCH_FORCE_HTTP1
   })
   /* istanbul ignore next */
   : fetchAPI;
-
-function appendURLParams(url, params) {
-  const u = new URL(url);
-  u.searchParams = Object.entries(params).reduce((p, [key, value]) => {
-    if (value) {
-      p.append(key, value);
-    }
-    return p;
-  }, u.searchParams);
-
-  return u.href;
-}
 
 /**
  * Returns fetch compatible options for the given handler options.
@@ -61,7 +52,6 @@ function getFetchOptions(options) {
 }
 
 module.exports = {
-  appendURLParams,
   fetch,
   getFetchOptions,
 };

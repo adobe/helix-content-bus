@@ -28,11 +28,6 @@ const { retrofit } = require('./utils.js');
 
 const SPEC_ROOT = resolve(__dirname, 'specs');
 
-/**
- * Proxy our action and its requirements.
- *
- * @param {Function} invoke OW action to invoke
- */
 const { main: proxyMain } = proxyquire('../src/index.js', {
   './content-proxy.js': { contentProxy: async (opts) => opts },
 });

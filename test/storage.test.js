@@ -17,8 +17,23 @@
 process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 
 const assert = require('assert');
+const proxyquire = require('proxyquire');
+const { Response } = require('@adobe/helix-universal');
 
-const { AWSStorage } = require('../src/storage.js');
+const { AWSStorage } = proxyquire('../src/storage.js', {
+  '@aws-sdk/client-s3': {
+    S3Client: class {
+      constructor({ region }) {
+        this._region = region;
+      }
+
+      // eslint-disable-next-line class-methods-use-this
+      async send(command) {
+        return command.input;
+      }
+    },
+  },
+});
 
 describe('Storage Tests', () => {
   it('constructor throws if required parameters are missing', async () => {
@@ -28,7 +43,18 @@ describe('Storage Tests', () => {
     }), /required/);
     assert.throws(() => new AWSStorage({
       AWS_REGION: 'foo',
-      AWS_ACCESS_KEY_ID: 'baz',
+      AWS_ACCESS_KEY_ID: 'bar',
     }), /required/);
+  });
+  it('actual', async () => {
+    const storage = new AWSStorage({
+      AWS_REGION: 'foo',
+      AWS_ACCESS_KEY_ID: 'bar',
+      AWS_SECRET_ACCESS_KEY: 'baz',
+      mount: { url: 'mymount' },
+    });
+    await assert.doesNotReject(() => storage.store(
+      '/path', new Response('body', { status: 200 }),
+    ));
   });
 });

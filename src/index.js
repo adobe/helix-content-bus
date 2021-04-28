@@ -9,6 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
+'use strict';
+
 const { AbortError, FetchError } = require('@adobe/helix-fetch');
 const { logger } = require('@adobe/helix-universal-logger');
 const { requiredConfig, wrap } = require('@adobe/helix-shared');

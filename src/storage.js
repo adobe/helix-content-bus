@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+'use strict';
+
 const crypto = require('crypto');
 const {
   S3Client,

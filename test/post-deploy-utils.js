@@ -11,6 +11,9 @@
  */
 
 /* eslint-disable max-classes-per-file, class-methods-use-this */
+
+'use strict';
+
 const packjson = require('../package.json');
 require('dotenv').config();
 

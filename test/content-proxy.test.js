@@ -54,7 +54,7 @@ describe('Content Proxy Tests', () => {
       ref: 'baz',
       path: '/example-post.md',
       log: console,
-      options: { requestId: '1234' },
+      options: { },
       resolver,
     };
     const res = await contentProxy(params);

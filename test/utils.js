@@ -9,12 +9,15 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
+'use strict';
+
 const querystring = require('querystring');
 
 function retrofit(fn) {
   const resolver = {
-    createURL({ package, name, version }) {
-      return new URL(`https://adobeioruntime.net/api/v1/web/helix/${package}/${name}@${version}`);
+    createURL({ pkg, name, version }) {
+      return new URL(`https://adobeioruntime.net/api/v1/web/helix/${pkg}/${name}@${version}`);
     },
   };
   return async (params = {}, env = {}) => {
