@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/adobe/helix-content-bus/compare/v1.0.1...v1.0.2) (2021-04-28)
+
+
+### Bug Fixes
+
+* **deps:** update helix-post-deploy ([0864b6d](https://github.com/adobe/helix-content-bus/commit/0864b6dfaebcd4ef32cd9d45a53186e32c4e1e26))
+
 ## [1.0.1](https://github.com/adobe/helix-content-bus/compare/v1.0.0...v1.0.1) (2021-04-28)
 
 
