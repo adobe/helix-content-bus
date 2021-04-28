@@ -21,15 +21,35 @@ const fs = require('fs');
 const nock = require('nock');
 const { basename, resolve } = require('path');
 const proxyquire = require('proxyquire');
+
+const { Response } = require('@adobe/helix-fetch');
 const { condit } = require('@adobe/helix-testutils');
 
 const { main: universalMain } = require('../src/index.js');
+const { AWSStorage } = require('../src/storage.js');
 const { retrofit } = require('./utils.js');
 
 const SPEC_ROOT = resolve(__dirname, 'specs');
 
+class AWSStorageMock extends AWSStorage {
+  // eslint-disable-next-line class-methods-use-this
+  async store() {}
+}
+
 const { main: proxyMain } = proxyquire('../src/index.js', {
-  './content-proxy.js': { contentProxy: async (opts) => opts },
+  './storage.js': {
+    AWSStorage: AWSStorageMock,
+  },
+  './content-proxy.js': {
+    contentProxy: async ({ path }) => {
+      const fsPath = resolve(SPEC_ROOT, basename(path));
+      if (fs.existsSync(fsPath)) {
+        const body = fs.readFileSync(fsPath, 'utf-8');
+        return new Response(body, { status: 200 });
+      }
+      return new Response(`File not found: ${fsPath}`, { status: 404 });
+    },
+  },
 });
 
 describe('Index Tests', () => {
@@ -37,11 +57,11 @@ describe('Index Tests', () => {
     nock('https://raw.githubusercontent.com')
       .get((uri) => uri.startsWith('/foo/bar/baz'))
       .reply((uri) => {
-        const path = resolve(SPEC_ROOT, basename(uri));
-        if (!fs.existsSync(path)) {
-          return [404, `File not found: ${path}`];
+        const fsPath = resolve(SPEC_ROOT, basename(uri));
+        if (!fs.existsSync(fsPath)) {
+          return [404, `File not found: ${fsPath}`];
         }
-        return [200, fs.readFileSync(path, 'utf-8')];
+        return [200, fs.readFileSync(fsPath, 'utf-8')];
       })
       .persist();
   });
@@ -69,7 +89,48 @@ describe('Index Tests', () => {
     assert.match(res.body, /not mounted/);
   });
 
-  condit('actual invocation', condit.hasenvs(['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']), async () => {
+  it('call index function with missing env', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/mnt/example-post.md',
+    }, {});
+    assert.strictEqual(res.statusCode, 500);
+  });
+
+  it('call index function with an existing path', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/mnt/example-post.md',
+    }, {
+      AWS_REGION: 'foo',
+      AWS_ACCESS_KEY_ID: 'bar',
+      AWS_SECRET_ACCESS_KEY: 'baz',
+    });
+    assert.strictEqual(res.statusCode, 200);
+  });
+
+  it('call index function with an non-existing path', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/mnt/missing.md',
+    }, {
+      AWS_REGION: 'foo',
+      AWS_ACCESS_KEY_ID: 'bar',
+      AWS_SECRET_ACCESS_KEY: 'baz',
+    });
+    assert.strictEqual(res.statusCode, 404);
+  });
+
+  condit('live invocation', condit.hasenvs(['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']), async () => {
     const main = retrofit(universalMain);
     const params = {
       owner: 'adobe',

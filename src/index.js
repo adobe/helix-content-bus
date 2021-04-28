@@ -53,22 +53,6 @@ async function main(req, context) {
     });
   }
 
-  let storage;
-
-  try {
-    storage = new AWSStorage({
-      AWS_REGION,
-      AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY,
-      mount: mp,
-      log,
-    });
-  } catch (e) {
-    return new Response(`Unable to create AWSStorage: ${e.message}`, {
-      status: 400,
-    });
-  }
-
   const options = {
     cache: 'no-store',
     fetchTimeout: HTTP_TIMEOUT_EXTERNAL || 20000,
@@ -79,6 +63,14 @@ async function main(req, context) {
   };
 
   try {
+    const storage = new AWSStorage({
+      AWS_REGION,
+      AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY,
+      mount: mp,
+      log,
+    });
+
     const res = await contentProxy({
       owner, repo, ref, path, log, options, resolver,
     });
@@ -90,6 +82,7 @@ async function main(req, context) {
       status: 200,
     });
   } catch (e) {
+    /* istanbul ignore next */
     if (e instanceof AbortError) {
       return new Response(e.message, {
         status: 504,
