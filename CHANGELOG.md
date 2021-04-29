@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/adobe/helix-content-bus/compare/v1.0.2...v1.0.3) (2021-04-29)
+
+
+### Bug Fixes
+
+* add template bucket with tags ([#5](https://github.com/adobe/helix-content-bus/issues/5)) ([3e9280f](https://github.com/adobe/helix-content-bus/commit/3e9280fb54522b134b47486becf45402e1c3a48a))
+
 ## [1.0.2](https://github.com/adobe/helix-content-bus/compare/v1.0.1...v1.0.2) (2021-04-28)
 
 
