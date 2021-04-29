@@ -29,6 +29,15 @@ const {
 const TEMPLATE_BUCKET = 'helix-content-bus-template';
 
 /**
+ * Header names that AWS considers system defined.
+ */
+const AWS_S3_SYSTEM_HEADERS = [
+  'cache-control',
+  'content-type',
+  'expires',
+];
+
+/**
  * AWS Storage class
  */
 class AWSStorage {
@@ -138,12 +147,23 @@ class AWSStorage {
     const body = await res.buffer();
     const key = `${prefix}${path}`;
 
-    const result = await this.client.send(new PutObjectCommand({
+    const input = {
       Body: body,
       Bucket: this.bucket,
-      ContentType: res.headers.get('content-type'),
+      Metadata: {},
       Key: key,
-    }));
+    };
+
+    Array.from(res.headers.entries()).forEach(([name, value]) => {
+      if (AWS_S3_SYSTEM_HEADERS.includes(name)) {
+        const property = name.split('-').map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1)).join('');
+        input[property] = value;
+      } else {
+        input.Metadata[name] = value;
+      }
+    });
+
+    const result = await this.client.send(new PutObjectCommand(input));
     log.info(`Object uploaded to: ${this.bucket}/${key}`);
     return result;
   }

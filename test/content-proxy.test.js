@@ -35,7 +35,10 @@ describe('Content Proxy Tests', () => {
         if (path) {
           const fsPath = resolve(SPEC_ROOT, basename(path));
           if (fs.existsSync(fsPath)) {
-            return [200, fs.readFileSync(fsPath, 'utf-8')];
+            fs.statSync(fsPath);
+            return [200, fs.readFileSync(fsPath, 'utf-8'), {
+              'last-modified': fs.statSync(fsPath).mtime.toGMTString(),
+            }];
           }
         }
         return [404, `File not found: ${path}`];
