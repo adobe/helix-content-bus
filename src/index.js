@@ -37,7 +37,7 @@ async function main(req, context) {
   const { searchParams } = new URL(req.url);
   const params = Object.fromEntries(searchParams.entries());
   const {
-    owner, repo, ref, path,
+    owner, repo, ref, path, prefix = 'live',
   } = params;
 
   if (!(owner && repo && ref && path)) {
@@ -62,8 +62,10 @@ async function main(req, context) {
     || '',
   };
 
+  let storage;
+
   try {
-    const storage = new AWSStorage({
+    storage = new AWSStorage({
       AWS_S3_REGION,
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
@@ -77,7 +79,7 @@ async function main(req, context) {
     if (!res.ok) {
       return res;
     }
-    const output = await storage.store(path, res);
+    const output = await storage.store(prefix, path, res);
     return new Response(JSON.stringify(output, null, 2), {
       status: 200,
     });
@@ -106,6 +108,10 @@ async function main(req, context) {
     /* istanbul ignore next */
     const status = (e && e.status) || 500;
     return new Response(body, { status });
+  } finally {
+    if (storage) {
+      storage.close();
+    }
   }
 }
 

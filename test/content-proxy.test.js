@@ -43,7 +43,7 @@ describe('Content Proxy Tests', () => {
       .persist();
   });
   const resolver = {
-    createURL({ pkg, name, version }) {
+    createURL({ package: pkg, name, version }) {
       return new URL(`https://adobeioruntime.net/api/v1/web/helix/${pkg}/${name}@${version}`);
     },
   };
