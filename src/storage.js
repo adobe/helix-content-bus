@@ -156,8 +156,8 @@ class AWSStorage {
 
     Array.from(res.headers.entries()).forEach(([name, value]) => {
       if (AWS_S3_SYSTEM_HEADERS.includes(name)) {
-        // system headers are stored in the command itself, e.g. `content-type` header value
-        // is stored as `ContentType` property
+        // system headers are stored in the command itself, e.g.
+        // `content-type` header is stored as `ContentType` property
         const property = name.split('-').map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1)).join('');
         input[property] = value;
       } else {

@@ -76,8 +76,7 @@ async function contentProxy(opts) {
     status: utils.propagateStatusCode(resp.status),
     headers: {
       'x-error': resp.headers.get('x-error'),
-      vary: resp.headers.get('vary'),
-      'cache-control': 'max-age=60',
+      'cache-control': 'private, no-cache',
     },
   });
 }
