@@ -147,7 +147,10 @@ describe('Storage Tests', () => {
     storage.client.storage = memStorage;
 
     await assert.doesNotReject(() => storage.store(
-      'live', '/path', new Response('body', { status: 200 }),
+      'live', '/path', new Response('body', {
+        status: 200,
+        headers: { 'last-modified': 'Tue, 20 Apr 2021 23:51:03 GMT' },
+      }),
     ));
     await assert.doesNotReject(() => storage.store(
       'live', '/path2', new Response('body', { status: 200 }),

@@ -146,4 +146,18 @@ describe('Live Tests', () => {
     });
     assert.strictEqual(res.statusCode, 200);
   }).timeout(20000);
+  condit('Store spark-website', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+    const main = retrofit(universalMain);
+    const res = await main({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
+    }, {
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+    });
+    assert.strictEqual(res.statusCode, 200);
+  }).timeout(20000);
 });
