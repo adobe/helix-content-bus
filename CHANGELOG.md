@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/adobe/helix-content-bus/compare/v1.0.3...v1.0.4) (2021-04-30)
+
+
+### Bug Fixes
+
+* store response headers in S3, use user-defined prefix where necessary ([#7](https://github.com/adobe/helix-content-bus/issues/7)) ([e2b8149](https://github.com/adobe/helix-content-bus/commit/e2b8149cb6fb730a34e7d4f197237f471fa75e6b))
+
 ## [1.0.3](https://github.com/adobe/helix-content-bus/compare/v1.0.2...v1.0.3) (2021-04-29)
 
 
