@@ -21,14 +21,7 @@ const { fetch, getFetchOptions } = require('./utils.js');
  */
 const PASSTHROUGH_HEADERS = [
   'content-type',
-  'access-control-allow-origin',
-  'access-control-allow-methods',
-  'access-control-allow-headers',
-  'cache-control',
   'last-modified',
-  'surrogate-control',
-  'surrogate-key',
-  'vary',
   'x-source-location',
 ];
 
