@@ -55,6 +55,7 @@ class AWSStorage {
     }
 
     if (region && accessKeyId && secretAccessKey) {
+      log.info('Creating S3Client with credentials');
       this._s3 = new S3Client({
         region,
         credentials: {
@@ -63,6 +64,7 @@ class AWSStorage {
         },
       });
     } else {
+      log.info('Creating S3Client without credentials');
       this._s3 = new S3Client();
     }
     const sha256 = crypto
