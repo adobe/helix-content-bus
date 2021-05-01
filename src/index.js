@@ -21,6 +21,16 @@ const { Response } = require('@adobe/helix-universal');
 const { contentProxy } = require('./content-proxy.js');
 const { AWSStorage } = require('./storage.js');
 
+/* istanbul ignore next */
+function unknown(e, log) {
+  const stack = (e && e.stack) || 'no stack';
+  log.error('Unhandled error', e, stack);
+
+  const body = (e && e.message) || 'no message';
+  const status = (e && e.status) || 500;
+  return new Response(body, { status });
+}
+
 /**
  * Fetches content from content-proxy and stores it in an S3 bucket.
  *
@@ -100,15 +110,9 @@ async function main(req, context) {
       }
     }
     /* istanbul ignore next */
-    const stack = (e && e.stack) || 'no stack';
-    log.error('Unhandled error', e, stack);
-
-    /* istanbul ignore next */
-    const body = (e && e.message) || 'no message';
-    /* istanbul ignore next */
-    const status = (e && e.status) || 500;
-    return new Response(body, { status });
+    return unknown(e, log);
   } finally {
+    /* istanbul ignore else */
     if (storage) {
       storage.close();
     }
