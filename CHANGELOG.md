@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/adobe/helix-content-bus/compare/v1.1.0...v1.1.1) (2021-05-01)
+
+
+### Bug Fixes
+
+* log how S3Client is created (with or w/o credentials) ([a87c5e7](https://github.com/adobe/helix-content-bus/commit/a87c5e79a1b42ee10f4f56496e88025250f0f161))
+
 # [1.1.0](https://github.com/adobe/helix-content-bus/compare/v1.0.4...v1.1.0) (2021-05-01)
 
 
