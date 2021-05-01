@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/adobe/helix-content-bus/compare/v1.0.4...v1.1.0) (2021-05-01)
+
+
+### Features
+
+* make AWS_S3_ env optional ([#8](https://github.com/adobe/helix-content-bus/issues/8)) ([f1187eb](https://github.com/adobe/helix-content-bus/commit/f1187eba228e8a3cb995e6b95046750f7085b4f4))
+
 ## [1.0.4](https://github.com/adobe/helix-content-bus/compare/v1.0.3...v1.0.4) (2021-04-30)
 
 
