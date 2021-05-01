@@ -89,17 +89,6 @@ describe('Index Tests', () => {
     assert.match(res.body, /not mounted/);
   });
 
-  it('call index function with missing env', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/example-post.md',
-    }, {});
-    assert.strictEqual(res.statusCode, 500);
-  });
-
   it('call index function with an existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({

@@ -24,10 +24,6 @@ const { Response } = require('@adobe/helix-universal');
 const { AWSStorage } = proxyquire('../src/storage.js', {
   '@aws-sdk/client-s3': {
     S3Client: class {
-      constructor({ region }) {
-        this._region = region;
-      }
-
       // eslint-disable-next-line class-methods-use-this
       send(command) {
         return command.run(this._storage);
@@ -114,13 +110,11 @@ const { AWSStorage } = proxyquire('../src/storage.js', {
 describe('Storage Tests', () => {
   it('constructor throws if required parameters are missing', async () => {
     assert.throws(() => new AWSStorage({}), /required/);
-    assert.throws(() => new AWSStorage({
-      AWS_S3_REGION: 'foo',
-    }), /required/);
-    assert.throws(() => new AWSStorage({
-      AWS_S3_REGION: 'foo',
-      AWS_S3_ACCESS_KEY_ID: 'bar',
-    }), /required/);
+  });
+  it('constructor succeeds if required parameters are there', async () => {
+    assert.doesNotThrow(() => new AWSStorage({
+      mount: { url: 'mymount' },
+    }));
   });
   it('store item to non existing bucket with missing template bucket', async () => {
     const storage = new AWSStorage({

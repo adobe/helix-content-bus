@@ -50,24 +50,27 @@ class AWSStorage {
       log = console,
     } = opts;
 
-    if (!(region && accessKeyId && secretAccessKey)) {
-      throw new Error('AWS_S3_REGION, AWS_S3_ACCESS_KEY_ID and AWS_S3_SECRET_ACCESS_KEY are required.');
+    if (!mount) {
+      throw new Error('mount is required.');
     }
 
-    this._s3 = new S3Client({
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
+    if (region && accessKeyId && secretAccessKey) {
+      this._s3 = new S3Client({
+        region,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      });
+    } else {
+      this._s3 = new S3Client();
+    }
     const sha256 = crypto
       .createHash('sha256')
       .update(mount.url)
       .digest('hex');
 
     this._bucket = `h3${sha256.substr(0, 59)}`;
-    this._region = region;
     this._mountUrl = mount.url;
     this._log = log;
   }
