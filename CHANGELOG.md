@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/adobe/helix-content-bus/compare/v1.1.1...v1.1.2) (2021-05-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#9](https://github.com/adobe/helix-content-bus/issues/9)) ([1e343d1](https://github.com/adobe/helix-content-bus/commit/1e343d1a9f4790042d6b256ad7288ec10d9761a5))
+
 ## [1.1.1](https://github.com/adobe/helix-content-bus/compare/v1.1.0...v1.1.1) (2021-05-01)
 
 
