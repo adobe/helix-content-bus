@@ -13,7 +13,7 @@
 'use strict';
 
 const { Response } = require('@adobe/helix-fetch');
-const { utils } = require('@adobe/helix-shared');
+const { logLevelForStatusCode, propagateStatusCode } = require('@adobe/helix-shared-utils');
 const { fetch, getFetchOptions } = require('./utils.js');
 
 /**
@@ -71,9 +71,9 @@ async function contentProxy(opts) {
       headers,
     });
   }
-  log[utils.logLevelForStatusCode(resp.status)](`Unable to fetch ${url.href} (${resp.status}) from content-proxy: ${body}`);
+  log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url.href} (${resp.status}) from content-proxy: ${body}`);
   return new Response(body, {
-    status: utils.propagateStatusCode(resp.status),
+    status: propagateStatusCode(resp.status),
     headers: {
       'x-error': resp.headers.get('x-error'),
       'cache-control': 'private, no-cache',
