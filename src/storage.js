@@ -15,8 +15,27 @@
 const crypto = require('crypto');
 const {
   S3Client,
+  CreateBucketCommand,
+  GetBucketTaggingCommand,
+  HeadBucketCommand,
+  PutBucketTaggingCommand,
   PutObjectCommand,
+  PutPublicAccessBlockCommand,
 } = require('@aws-sdk/client-s3');
+
+/**
+ * Template bucket we use for copying the tags.
+ */
+const TEMPLATE_BUCKET = 'helix-content-bus-template';
+
+/**
+ * Header names that AWS considers system defined.
+ */
+const AWS_S3_SYSTEM_HEADERS = [
+  'cache-control',
+  'content-type',
+  'expires',
+];
 
 /**
  * AWS Storage class
@@ -31,38 +50,137 @@ class AWSStorage {
       log = console,
     } = opts;
 
-    if (!(region && accessKeyId && secretAccessKey)) {
-      throw new Error('AWS_S3_REGION, AWS_S3_ACCESS_KEY_ID and AWS_S3_SECRET_ACCESS_KEY are required.');
+    if (!mount) {
+      throw new Error('mount is required.');
     }
 
-    this._s3 = new S3Client({
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
+    if (region && accessKeyId && secretAccessKey) {
+      log.info('Creating S3Client with credentials');
+      this._s3 = new S3Client({
+        region,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      });
+    } else {
+      log.info('Creating S3Client without credentials');
+      this._s3 = new S3Client();
+    }
     const sha256 = crypto
       .createHash('sha256')
       .update(mount.url)
       .digest('hex');
-    this._bucket = `h3${sha256.substr(0, 60)}`;
+
+    this._bucket = `h3${sha256.substr(0, 59)}`;
+    this._mountUrl = mount.url;
     this._log = log;
   }
 
-  async store(path, res) {
+  async _bucketExists() {
+    try {
+      await this.client.send(new HeadBucketCommand({
+        Bucket: this._bucket,
+      }));
+      return true;
+    } catch (e) {
+      /* istanbul ignore next */
+      if (e.$metadata.httpStatusCode !== 404) {
+        throw e;
+      }
+      return false;
+    }
+  }
+
+  async _bucketCreate() {
+    const { log } = this;
+    let tags;
+
+    try {
+      const result = await this.client.send(new GetBucketTaggingCommand({
+        Bucket: TEMPLATE_BUCKET,
+      }));
+      tags = result.TagSet;
+    } catch (e) {
+      log.error(`Unable to obtain default tags from template bucket: ${this.bucket}`, e);
+      throw e;
+    }
+
+    // Create the new bucket
+    await this.client.send(new CreateBucketCommand({
+      Bucket: this._bucket,
+    }));
+
+    // Block public access
+    await this.client.send(new PutPublicAccessBlockCommand({
+      Bucket: this._bucket,
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        IgnorePublicAcls: true,
+        BlockPublicPolicy: true,
+        RestrictPublicBuckets: true,
+      },
+    }));
+
+    // Put required tags
+    tags.push({ Key: 'mountpoint', Value: decodeURI(this._mountUrl) });
+    await this.client.send(new PutBucketTaggingCommand({
+      Bucket: this._bucket,
+      Tagging: {
+        TagSet: tags,
+      },
+    }));
+    log.info(`Bucket created: ${this.bucket}`);
+  }
+
+  async _init() {
+    if (this._initialized) {
+      return;
+    }
+
+    const exists = await this._bucketExists();
+    if (!exists) {
+      await this._bucketCreate();
+    }
+    this._initialized = true;
+  }
+
+  async store(prefix, path, res) {
+    await this._init();
+
     const { log } = this;
     const body = await res.buffer();
+    const key = `${prefix}${path}`;
 
     const input = {
       Body: body,
       Bucket: this.bucket,
-      ContentType: res.headers.get('content-type'),
-      Key: path,
+      Metadata: {},
+      Key: key,
     };
-    const output = await this._s3.send(new PutObjectCommand(input));
-    log.info(`Object uploaded to: ${this.bucket}${path} (${JSON.stringify(output)})`);
-    return output;
+
+    Array.from(res.headers.entries()).forEach(([name, value]) => {
+      if (AWS_S3_SYSTEM_HEADERS.includes(name)) {
+        // system headers are stored in the command itself, e.g.
+        // `content-type` header is stored as `ContentType` property
+        const property = name.split('-').map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1)).join('');
+        input[property] = value;
+      } else {
+        input.Metadata[name] = value;
+      }
+    });
+
+    const result = await this.client.send(new PutObjectCommand(input));
+    log.info(`Object uploaded to: ${this.bucket}/${key}`);
+    return result;
+  }
+
+  close() {
+    this.client.destroy();
+  }
+
+  get client() {
+    return this._s3;
   }
 
   get bucket() {

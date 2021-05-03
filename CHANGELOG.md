@@ -1,3 +1,38 @@
+## [1.1.2](https://github.com/adobe/helix-content-bus/compare/v1.1.1...v1.1.2) (2021-05-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#9](https://github.com/adobe/helix-content-bus/issues/9)) ([1e343d1](https://github.com/adobe/helix-content-bus/commit/1e343d1a9f4790042d6b256ad7288ec10d9761a5))
+
+## [1.1.1](https://github.com/adobe/helix-content-bus/compare/v1.1.0...v1.1.1) (2021-05-01)
+
+
+### Bug Fixes
+
+* log how S3Client is created (with or w/o credentials) ([a87c5e7](https://github.com/adobe/helix-content-bus/commit/a87c5e79a1b42ee10f4f56496e88025250f0f161))
+
+# [1.1.0](https://github.com/adobe/helix-content-bus/compare/v1.0.4...v1.1.0) (2021-05-01)
+
+
+### Features
+
+* make AWS_S3_ env optional ([#8](https://github.com/adobe/helix-content-bus/issues/8)) ([f1187eb](https://github.com/adobe/helix-content-bus/commit/f1187eba228e8a3cb995e6b95046750f7085b4f4))
+
+## [1.0.4](https://github.com/adobe/helix-content-bus/compare/v1.0.3...v1.0.4) (2021-04-30)
+
+
+### Bug Fixes
+
+* store response headers in S3, use user-defined prefix where necessary ([#7](https://github.com/adobe/helix-content-bus/issues/7)) ([e2b8149](https://github.com/adobe/helix-content-bus/commit/e2b8149cb6fb730a34e7d4f197237f471fa75e6b))
+
+## [1.0.3](https://github.com/adobe/helix-content-bus/compare/v1.0.2...v1.0.3) (2021-04-29)
+
+
+### Bug Fixes
+
+* add template bucket with tags ([#5](https://github.com/adobe/helix-content-bus/issues/5)) ([3e9280f](https://github.com/adobe/helix-content-bus/commit/3e9280fb54522b134b47486becf45402e1c3a48a))
+
 ## [1.0.2](https://github.com/adobe/helix-content-bus/compare/v1.0.1...v1.0.2) (2021-04-28)
 
 

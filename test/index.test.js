@@ -89,17 +89,6 @@ describe('Index Tests', () => {
     assert.match(res.body, /not mounted/);
   });
 
-  it('call index function with missing env', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/example-post.md',
-    }, {});
-    assert.strictEqual(res.statusCode, 500);
-  });
-
   it('call index function with an existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
@@ -115,7 +104,7 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 200);
   });
 
-  it('call index function with an non-existing path', async () => {
+  it('call index function with a non-existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -129,14 +118,30 @@ describe('Index Tests', () => {
     });
     assert.strictEqual(res.statusCode, 404);
   });
+});
 
-  condit('live invocation', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+describe('Live Tests', () => {
+  condit('Store theblog', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
     const main = retrofit(universalMain);
     const res = await main({
       owner: 'adobe',
       repo: 'theblog',
       ref: 'master',
       path: '/en/publish/2020/11/02/high-tech-companies-can-deliver-successful-cx-with-ml-real-time-data.md',
+    }, {
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+    });
+    assert.strictEqual(res.statusCode, 200);
+  }).timeout(20000);
+  condit('Store spark-website', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+    const main = retrofit(universalMain);
+    const res = await main({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
     }, {
       AWS_S3_REGION: process.env.AWS_S3_REGION,
       AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,

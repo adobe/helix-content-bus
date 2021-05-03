@@ -21,6 +21,16 @@ const { Response } = require('@adobe/helix-universal');
 const { contentProxy } = require('./content-proxy.js');
 const { AWSStorage } = require('./storage.js');
 
+/* istanbul ignore next */
+function unknown(e, log) {
+  const stack = (e && e.stack) || 'no stack';
+  log.error('Unhandled error', e, stack);
+
+  const body = (e && e.message) || 'no message';
+  const status = (e && e.status) || 500;
+  return new Response(body, { status });
+}
+
 /**
  * Fetches content from content-proxy and stores it in an S3 bucket.
  *
@@ -37,7 +47,7 @@ async function main(req, context) {
   const { searchParams } = new URL(req.url);
   const params = Object.fromEntries(searchParams.entries());
   const {
-    owner, repo, ref, path,
+    owner, repo, ref, path, prefix = 'live',
   } = params;
 
   if (!(owner && repo && ref && path)) {
@@ -62,8 +72,10 @@ async function main(req, context) {
     || '',
   };
 
+  let storage;
+
   try {
-    const storage = new AWSStorage({
+    storage = new AWSStorage({
       AWS_S3_REGION,
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
@@ -77,7 +89,7 @@ async function main(req, context) {
     if (!res.ok) {
       return res;
     }
-    const output = await storage.store(path, res);
+    const output = await storage.store(prefix, path, res);
     return new Response(JSON.stringify(output, null, 2), {
       status: 200,
     });
@@ -98,14 +110,12 @@ async function main(req, context) {
       }
     }
     /* istanbul ignore next */
-    const stack = (e && e.stack) || 'no stack';
-    log.error('Unhandled error', e, stack);
-
-    /* istanbul ignore next */
-    const body = (e && e.message) || 'no message';
-    /* istanbul ignore next */
-    const status = (e && e.status) || 500;
-    return new Response(body, { status });
+    return unknown(e, log);
+  } finally {
+    /* istanbul ignore else */
+    if (storage) {
+      storage.close();
+    }
   }
 }
 

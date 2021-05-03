@@ -17,6 +17,15 @@ const { utils } = require('@adobe/helix-shared');
 const { fetch, getFetchOptions } = require('./utils.js');
 
 /**
+ * Pass through headers that we keep in the forwarded response.
+ */
+const PASSTHROUGH_HEADERS = [
+  'content-type',
+  'last-modified',
+  'x-source-location',
+];
+
+/**
  * Invokes content-proxy for a path
  *
  * @param {object}   opts options
@@ -47,21 +56,27 @@ async function contentProxy(opts) {
   url.searchParams.append('rid', options.requestId);
 
   log.info(`Fetching content from: ${url.href}`);
-  const response = await fetch(url.href, getFetchOptions(options));
-  const body = await response.text();
-  if (response.ok) {
+  const resp = await fetch(url.href, getFetchOptions(options));
+  const body = await resp.buffer();
+  if (resp.ok) {
+    const headers = {};
+    PASSTHROUGH_HEADERS.forEach((name) => {
+      const value = resp.headers.get(name);
+      if (value) {
+        headers[name] = value;
+      }
+    });
     return new Response(body, {
       status: 200,
-      headers: response.headers,
+      headers,
     });
   }
-  log[utils.logLevelForStatusCode(response.status)](`Unable to fetch ${url.href} (${response.status}) from content-proxy: ${body}`);
+  log[utils.logLevelForStatusCode(resp.status)](`Unable to fetch ${url.href} (${resp.status}) from content-proxy: ${body}`);
   return new Response(body, {
-    status: utils.propagateStatusCode(response.status),
+    status: utils.propagateStatusCode(resp.status),
     headers: {
-      'x-error': response.headers.get('x-error'),
-      vary: response.headers.get('vary'),
-      'cache-control': 'max-age=60',
+      'x-error': resp.headers.get('x-error'),
+      'cache-control': 'private, no-cache',
     },
   });
 }

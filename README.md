@@ -1,6 +1,6 @@
 # Helix Content Bus
 
-> An example library to be used in and with Project Helix
+> Serverless action that pushes helix-content-proxy into a storage service
 
 ## Status
 [![codecov](https://img.shields.io/codecov/c/github/adobe/helix-content-bus.svg)](https://codecov.io/gh/adobe/helix-content-bus)
@@ -14,11 +14,22 @@
 
 ## Usage
 
-```bash
-curl https://helix-pages.anywhere.run/helix-services/content-bus@v1
-```
+The following parameters should be passed when invoking the action:
+- `owner`: GitHub repository owner
+- `repo`: GitHub repository name
+- `ref`: GitHub repository reference or branch
+- `path`: path to the document to be fetched from helix-content-proxy
+- `prefix`: prefix to add to the S3 address, defaults to `live`
 
-For more, see the [API documentation](docs/API.md).
+Note: the first three parameters also determine the location where the `fstab.yaml` configuration file is downloaded from.
+The service requires that file to find a matching mount point, which also determines the bucket name used in S3.
+
+The following environment variables are optional:
+- `AWS_S3_REGION`: AWS region
+- `AWS_S3_ACCESS_KEY_ID`: AWS access key associated with an IAM user or role
+- `AWS_S3_SECRET_ACCESS_KEY`: Specifies the secret key associated with the access key
+
+If they're not specified, the function operates with whatever role it was deployed with.
 
 ## Development
 
