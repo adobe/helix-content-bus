@@ -13,13 +13,16 @@
     "docs": "npx jsdoc2md -c .jsdoc.json --files 'src/*.js'  > docs/API.md",
     "commit": "git-cz",
     "build": "hedy -v",
-    "deploy": "hedy -v --deploy --test=/_status_check/healthcheck.json",
-    "deploy-sequences": "hedy --no-build -no-hints -l latest -l major -l minor",
-    "deploy-ci": "hedy -v --deploy --test=/_status_check/healthcheck.json --pkgVersion=ci$CIRCLE_BUILD_NUM -l ci"
+    "deploy": "unset HLX_AWS_ROLE; hedy -v --deploy --test",
+    "deploy-sequences": "hedy --no-build -no-hints -l major -l minor",
+    "deploy-ci": "unset HLX_AWS_ROLE; hedy -v --deploy --test --pkgVersion=ci$CIRCLE_BUILD_NUM -l ci"
   },
   "wsk": {
     "name": "helix-services/content-bus@${version}",
-    "memory": 512
+    "memory": 512,
+    "awsRole": "arn:aws:iam::118435662149:role/helix-service-role-s3-rw",
+    "testUrl": "/_status_check/healthcheck.json",
+    "target": "aws"
   },
   "repository": {
     "type": "git",
