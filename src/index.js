@@ -14,7 +14,9 @@
 
 const { AbortError, FetchError } = require('@adobe/helix-fetch');
 const { logger } = require('@adobe/helix-universal-logger');
-const { requiredConfig, wrap, bodyData } = require('@adobe/helix-shared');
+const wrap = require('@adobe/helix-shared-wrap');
+const bodyData = require('@adobe/helix-shared-body-data');
+const { requiredConfig } = require('@adobe/helix-shared-config');
 const { wrap: helixStatus } = require('@adobe/helix-status');
 const { Response } = require('@adobe/helix-universal');
 

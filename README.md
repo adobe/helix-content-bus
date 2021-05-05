@@ -24,10 +24,12 @@ The following parameters should be passed when invoking the action:
 Note: the first three parameters also determine the location where the `fstab.yaml` configuration file is downloaded from.
 The service requires that file to find a matching mount point, which also determines the bucket name used in S3.
 
-The following environment variables are required:
+The following environment variables are optional:
 - `AWS_S3_REGION`: AWS region
 - `AWS_S3_ACCESS_KEY_ID`: AWS access key associated with an IAM user or role
 - `AWS_S3_SECRET_ACCESS_KEY`: Specifies the secret key associated with the access key
+
+If they're not specified, the function operates with whatever role it was deployed with.
 
 ## Development
 
