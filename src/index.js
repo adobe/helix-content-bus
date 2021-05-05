@@ -15,6 +15,7 @@
 const { AbortError, FetchError } = require('@adobe/helix-fetch');
 const { logger } = require('@adobe/helix-universal-logger');
 const wrap = require('@adobe/helix-shared-wrap');
+const bodyData = require('@adobe/helix-shared-body-data');
 const { requiredConfig } = require('@adobe/helix-shared-config');
 const { wrap: helixStatus } = require('@adobe/helix-status');
 const { Response } = require('@adobe/helix-universal');
@@ -45,11 +46,10 @@ async function main(req, context) {
     AWS_S3_REGION, AWS_S3_ACCESS_KEY_ID, AWS_S3_SECRET_ACCESS_KEY,
     HTTP_TIMEOUT_EXTERNAL,
   } = env;
-  const { searchParams } = new URL(req.url);
-  const params = Object.fromEntries(searchParams.entries());
+
   const {
     owner, repo, ref, path, prefix = 'live',
-  } = params;
+  } = context.data;
 
   if (!(owner && repo && ref && path)) {
     return new Response('owner, repo, ref, and path parameters are required', {
@@ -122,6 +122,7 @@ async function main(req, context) {
 
 module.exports.main = wrap(main)
   .with(requiredConfig, 'fstab')
+  .with(bodyData)
   .with(helixStatus)
   .with(logger.trace)
   .with(logger);

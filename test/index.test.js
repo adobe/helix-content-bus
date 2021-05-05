@@ -100,7 +100,7 @@ describe('Index Tests', () => {
       AWS_S3_REGION: 'foo',
       AWS_S3_ACCESS_KEY_ID: 'bar',
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
-    });
+    }, true);
     assert.strictEqual(res.statusCode, 200);
   });
 
