@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/adobe/helix-content-bus/compare/v1.1.3...v1.1.4) (2021-05-05)
+
+
+### Bug Fixes
+
+* use context.data for both GET and POST ([#17](https://github.com/adobe/helix-content-bus/issues/17)) ([0b514f8](https://github.com/adobe/helix-content-bus/commit/0b514f8f4d42db026860dca774a3da8e297fddd3))
+
 ## [1.1.3](https://github.com/adobe/helix-content-bus/compare/v1.1.2...v1.1.3) (2021-05-04)
 
 
