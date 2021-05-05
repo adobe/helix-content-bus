@@ -100,5 +100,6 @@ function createTargets(opts) {
 module.exports = {
   OpenwhiskTarget,
   AWSTarget,
+  GoogleTarget,
   createTargets,
 };
