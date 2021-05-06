@@ -33,6 +33,7 @@ const PASSTHROUGH_HEADERS = [
  * @param {string}   opts.repo the GitHub repository
  * @param {string}   opts.ref the GitHub ref
  * @param {string}   opts.path the path of the file to retrieve
+ * @param {string}   opts.mp mountpoint
  * @param {object}   opts.log a Helix-Log instance
  * @param {object}   opts.options Helix Fetch options
  * @param {Resolver} opts.resolver Version lock helper
@@ -41,7 +42,7 @@ const PASSTHROUGH_HEADERS = [
  */
 async function contentProxy(opts) {
   const {
-    owner, repo, ref, path, log, options, resolver,
+    owner, repo, ref, path, mp, log, options, resolver,
   } = opts;
   const url = resolver.createURL({
     package: 'helix-services',
@@ -52,6 +53,12 @@ async function contentProxy(opts) {
   url.searchParams.append('repo', repo);
   url.searchParams.append('ref', ref);
   url.searchParams.append('path', path);
+
+  if (mp) {
+    url.searchParams.append('mpType', mp.type);
+    url.searchParams.append('mpRelPath', mp.relPath);
+    url.searchParams.append('mpURL', mp.url);
+  }
 
   url.searchParams.append('rid', options.requestId);
 
