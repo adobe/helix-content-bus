@@ -1,10 +1,11 @@
 {
   "name": "@adobe/helix-content-bus",
-  "version": "1.1.4",
+  "version": "1.1.4-test",
   "private": true,
   "description": "Helix Content Bus",
   "main": "src/index.js",
   "scripts": {
+    "start": "nodemon",
     "test": " nyc mocha -i -g 'Post-Deploy'",
     "test-ci": "nyc mocha -i -g 'Post-Deploy' --reporter xunit --reporter-options output=./junit/test-results.xml && codecov",
     "test-postdeploy": "mocha --reporter xunit --reporter-options output=./junit/test-results.xml -g 'Post-Deploy'",
@@ -47,7 +48,7 @@
   },
   "devDependencies": {
     "@adobe/eslint-config-helix": "1.1.4",
-    "@adobe/helix-deploy": "4.4.0",
+    "@adobe/helix-deploy": "4.4.1",
     "@adobe/helix-testutils": "0.4.5",
     "@semantic-release/changelog": "5.0.1",
     "@semantic-release/exec": "5.0.0",
@@ -66,6 +67,7 @@
     "lint-staged": "10.5.4",
     "mocha": "8.3.2",
     "nock": "13.0.11",
+    "nodemon": "2.0.7",
     "nyc": "15.1.0",
     "proxyquire": "2.1.3",
     "semantic-release": "17.4.2"
@@ -80,5 +82,12 @@
     "ghooks": {
       "pre-commit": "npx lint-staged"
     }
+  },
+  "nodemonConfig": {
+    "exec": "node ./test/dev/server.js",
+    "watch": [
+      ".env",
+      "."
+    ]
   }
 }
