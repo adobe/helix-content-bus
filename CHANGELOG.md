@@ -1,3 +1,10 @@
+## [1.1.6](https://github.com/adobe/helix-content-bus/compare/v1.1.5...v1.1.6) (2021-05-06)
+
+
+### Bug Fixes
+
+* send mountpoint info to content-proxy ([#22](https://github.com/adobe/helix-content-bus/issues/22)) ([48bd585](https://github.com/adobe/helix-content-bus/commit/48bd585b67692bad568cb245be86ff07d75b5263))
+
 ## [1.1.5](https://github.com/adobe/helix-content-bus/compare/v1.1.4...v1.1.5) (2021-05-06)
 
 
