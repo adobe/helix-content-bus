@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/adobe/helix-content-bus/compare/v1.1.4...v1.1.5) (2021-05-06)
+
+
+### Bug Fixes
+
+* **proxy:** propagate x-github-token ([#20](https://github.com/adobe/helix-content-bus/issues/20)) ([d573f42](https://github.com/adobe/helix-content-bus/commit/d573f42aa21a80146c6fa9c802cf2a372ea4e974))
+
 ## [1.1.4](https://github.com/adobe/helix-content-bus/compare/v1.1.3...v1.1.4) (2021-05-05)
 
 
