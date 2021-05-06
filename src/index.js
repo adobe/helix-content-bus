@@ -71,6 +71,7 @@ async function main(req, context) {
     || req.headers.get('x-cdn-request-id')
     || req.headers.get('x-openwhisk-activation-id')
     || '',
+    token: req.headers.get('x-github-token'),
   };
 
   let storage;

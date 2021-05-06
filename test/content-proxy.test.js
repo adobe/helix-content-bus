@@ -17,7 +17,7 @@
 process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 
 const assert = require('assert');
-const fs = require('fs');
+const fs = require('fs').promises;
 const nock = require('nock');
 const { basename, resolve } = require('path');
 const { URLSearchParams } = require('url');
@@ -30,15 +30,22 @@ describe('Content Proxy Tests', () => {
   before(async () => {
     nock('https://adobeioruntime.net')
       .get((uri) => uri.startsWith('/api/v1/web/helix'))
-      .reply((uri) => {
+      .reply(async function cb(uri) {
         const path = new URLSearchParams(uri.substr(uri.indexOf('?') + 1)).get('path');
         if (path) {
-          const fsPath = resolve(SPEC_ROOT, basename(path));
-          if (fs.existsSync(fsPath)) {
-            fs.statSync(fsPath);
-            return [200, fs.readFileSync(fsPath, 'utf-8'), {
-              'last-modified': fs.statSync(fsPath).mtime.toGMTString(),
+          if (path === '/private-post.md') {
+            if (this.req.headers['x-github-token'] !== 'foobar') {
+              return [403];
+            }
+          }
+          try {
+            const fsPath = resolve(SPEC_ROOT, basename(path));
+            const stat = await fs.stat(fsPath);
+            return [200, await fs.readFile(fsPath, 'utf-8'), {
+              'last-modified': stat.mtime.toGMTString(),
             }];
+          } catch {
+            // ignore
           }
         }
         return [404, `File not found: ${path}`];
@@ -50,6 +57,7 @@ describe('Content Proxy Tests', () => {
       return new URL(`https://adobeioruntime.net/api/v1/web/helix/${pkg}/${name}@${version}`);
     },
   };
+
   it('Content-Proxy should return existing document', async () => {
     const params = {
       owner: 'foo',
@@ -63,6 +71,7 @@ describe('Content Proxy Tests', () => {
     const res = await contentProxy(params);
     assert.strictEqual(res.status, 200);
   });
+
   it('Content-Proxy should return 404 for missing document', async () => {
     const params = {
       owner: 'foo',
@@ -75,5 +84,19 @@ describe('Content Proxy Tests', () => {
     };
     const res = await contentProxy(params);
     assert.strictEqual(res.status, 404);
+  });
+
+  it('x-github-token is passed to content-proxy', async () => {
+    const params = {
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/private-post.md',
+      log: console,
+      options: { requestId: '1234', token: 'foobar' },
+      resolver,
+    };
+    const res = await contentProxy(params);
+    assert.strictEqual(res.status, 200);
   });
 });

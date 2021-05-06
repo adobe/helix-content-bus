@@ -71,7 +71,7 @@ async function contentProxy(opts) {
       headers,
     });
   }
-  log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url.href} (${resp.status}) from content-proxy: ${body}`);
+  log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url.href} (${resp.status}) from content-proxy: ${resp.headers.get('x-error')}`);
   return new Response(body, {
     status: propagateStatusCode(resp.status),
     headers: {

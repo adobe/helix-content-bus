@@ -41,6 +41,11 @@ function getFetchOptions(options) {
     fetchopts.signal = timeoutSignal(options.fetchTimeout);
   }
   delete fetchopts.requestId;
+  if (fetchopts.token) {
+    fetchopts.headers['x-github-token'] = fetchopts.token;
+  }
+  delete fetchopts.token;
+
   // delete all secrets
   Object.keys(fetchopts)
     .forEach((key) => {
