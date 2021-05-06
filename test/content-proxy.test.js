@@ -67,7 +67,7 @@ describe('Content Proxy Tests', () => {
       mp: {
         type: 'onedrive',
         relPath: '/example-post.md',
-        url: 'https://adobe.sharepoint.com/mymount'
+        url: 'https://adobe.sharepoint.com/mymount',
       },
       log: console,
       options: { },
@@ -86,7 +86,7 @@ describe('Content Proxy Tests', () => {
       mp: {
         type: 'onedrive',
         relPath: '/missing.md',
-        url: 'https://adobe.sharepoint.com/mymount'
+        url: 'https://adobe.sharepoint.com/mymount',
       },
       log: console,
       options: { requestId: '1234' },
