@@ -86,7 +86,7 @@ async function main(req, context) {
     });
 
     const res = await contentProxy({
-      owner, repo, ref, path, log, options, resolver,
+      owner, repo, ref, path, mp, log, options, resolver,
     });
     if (!res.ok) {
       return res;
