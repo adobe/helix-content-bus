@@ -51,6 +51,27 @@ describe('Content Proxy Tests', () => {
         return [404, `File not found: ${path}`];
       })
       .persist();
+    nock('https://baz--bar--foo.hlx.page')
+      .get((uri) => uri)
+      .reply(async (uri) => {
+        const path = uri.substr(1);
+        if (path === '/private-post.md') {
+          if (this.req.headers['x-github-token'] !== 'foobar') {
+            return [403];
+          }
+        }
+        try {
+          const fsPath = resolve(SPEC_ROOT, basename(path));
+          const stat = await fs.stat(fsPath);
+          return [200, await fs.readFile(fsPath, 'utf-8'), {
+            'last-modified': stat.mtime.toGMTString(),
+          }];
+        } catch {
+          // ignore
+        }
+        return [404, `File not found: ${path}`];
+      })
+      .persist();
   });
   const resolver = {
     createURL({ package: pkg, name, version }) {
@@ -58,55 +79,61 @@ describe('Content Proxy Tests', () => {
     },
   };
 
-  it('Content-Proxy should return existing document', async () => {
-    const params = {
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/example-post.md',
-      mp: {
-        type: 'onedrive',
-        relPath: '/example-post.md',
-        url: 'https://adobe.sharepoint.com/mymount',
-      },
-      log: console,
-      options: { },
-      resolver,
-    };
-    const res = await contentProxy(params);
-    assert.strictEqual(res.status, 200);
-  });
+  [true, false].forEach((useCDN) => {
+    const display = useCDN ? 'CDN' : 'serverless';
+    it(`should return existing document (${display})`, async () => {
+      const params = {
+        owner: 'foo',
+        repo: 'bar',
+        ref: 'baz',
+        path: '/example-post.md',
+        mp: {
+          type: 'onedrive',
+          relPath: '/example-post.md',
+          url: 'https://adobe.sharepoint.com/mymount',
+        },
+        log: console,
+        options: { },
+        resolver,
+        useCDN,
+      };
+      const res = await contentProxy(params);
+      assert.strictEqual(res.status, 200);
+    });
 
-  it('Content-Proxy should return 404 for missing document', async () => {
-    const params = {
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/missing.md',
-      mp: {
-        type: 'onedrive',
-        relPath: '/missing.md',
-        url: 'https://adobe.sharepoint.com/mymount',
-      },
-      log: console,
-      options: { requestId: '1234' },
-      resolver,
-    };
-    const res = await contentProxy(params);
-    assert.strictEqual(res.status, 404);
-  });
+    it(`should return 404 for missing document (${display})`, async () => {
+      const params = {
+        owner: 'foo',
+        repo: 'bar',
+        ref: 'baz',
+        path: '/missing.md',
+        mp: {
+          type: 'onedrive',
+          relPath: '/missing.md',
+          url: 'https://adobe.sharepoint.com/mymount',
+        },
+        log: console,
+        options: { requestId: '1234' },
+        resolver,
+        useCDN,
+      };
+      const res = await contentProxy(params);
+      assert.strictEqual(res.status, 404);
+    });
 
-  it('x-github-token is passed to content-proxy', async () => {
-    const params = {
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/private-post.md',
-      log: console,
-      options: { requestId: '1234', token: 'foobar' },
-      resolver,
-    };
-    const res = await contentProxy(params);
-    assert.strictEqual(res.status, 200);
+    it(`x-github-token is passed (${display})`, async () => {
+      const params = {
+        owner: 'foo',
+        repo: 'bar',
+        ref: 'baz',
+        path: '/private-post.md',
+        log: console,
+        options: { requestId: '1234', token: 'foobar' },
+        resolver,
+        useCDN,
+      };
+      const res = await contentProxy(params);
+      assert.strictEqual(res.status, 200);
+    });
   });
 });
