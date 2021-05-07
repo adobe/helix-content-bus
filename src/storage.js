@@ -43,42 +43,6 @@ const AWS_S3_SYSTEM_HEADERS = [
  * AWS Storage class
  */
 class AWSStorage {
-  // constructor(opts) {
-  //   const {
-  //     AWS_S3_REGION: region,
-  //     AWS_S3_ACCESS_KEY_ID: accessKeyId,
-  //     AWS_S3_SECRET_ACCESS_KEY: secretAccessKey,
-  //     mount,
-  //     log = console,
-  //   } = opts;
-
-  //   if (!mount) {
-  //     throw new Error('mount is required.');
-  //   }
-
-  //   if (region && accessKeyId && secretAccessKey) {
-  //     log.info('Creating S3Client with credentials');
-  //     this._s3 = new S3Client({
-  //       region,
-  //       credentials: {
-  //         accessKeyId,
-  //         secretAccessKey,
-  //       },
-  //     });
-  //   } else {
-  //     log.info('Creating S3Client without credentials');
-  //     this._s3 = new S3Client();
-  //   }
-  //   const sha256 = crypto
-  //     .createHash('sha256')
-  //     .update(mount.url)
-  //     .digest('hex');
-
-  //   this._bucket = `h3${sha256.substr(0, 59)}`;
-  //   this._mountUrl = mount.url;
-  //   this._log = log;
-  // }
-
   constructor(opts) {
     const {
       AWS_S3_REGION: region,

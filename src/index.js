@@ -80,7 +80,6 @@ async function main(req, context) {
     }
   }
 
-  // const mp = context.config.fstab.match(path);
   const mp = fstab.match(path);
   if (!mp) {
     return new Response(`path specified is not mounted in fstab.yaml: ${path}`, {
