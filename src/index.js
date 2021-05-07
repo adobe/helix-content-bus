@@ -85,8 +85,9 @@ async function main(req, context) {
       log,
     });
 
+    const useCDN = true;
     const res = await contentProxy({
-      owner, repo, ref, path, mp, log, options, resolver,
+      owner, repo, ref, path, mp, log, options, resolver, useCDN,
     });
     if (!res.ok) {
       return res;

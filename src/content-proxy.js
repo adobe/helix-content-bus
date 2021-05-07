@@ -26,7 +26,49 @@ const PASSTHROUGH_HEADERS = [
 ];
 
 /**
- * Invokes content-proxy for a path
+ * Create the URL to fetch content from.
+ *
+ * @param {object}   opts options
+ * @param {string}   opts.owner the GitHub org or username
+ * @param {string}   opts.repo the GitHub repository
+ * @param {string}   opts.ref the GitHub ref
+ * @param {string}   opts.path the path of the file to retrieve
+ * @param {string}   opts.mp mountpoint
+ * @param {object}   opts.log a Helix-Log instance
+ * @param {object}   opts.options Helix Fetch options
+ * @param {Resolver} opts.resolver Version lock helper
+ * @param {boolean}  opts.useCDN whether to use CDN
+ *
+ * @returns {string} URL to fetch content from
+ */
+function createURL(opts) {
+  const {
+    owner, repo, ref, path, mp, options, resolver, useCDN,
+  } = opts;
+  if (!useCDN) {
+    const url = resolver.createURL({
+      package: 'helix-services',
+      name: 'content-proxy',
+      version: 'v2',
+    });
+    url.searchParams.append('owner', owner);
+    url.searchParams.append('repo', repo);
+    url.searchParams.append('ref', ref);
+    url.searchParams.append('path', path);
+
+    if (mp) {
+      url.searchParams.append('mpType', mp.type);
+      url.searchParams.append('mpRelPath', mp.relPath);
+      url.searchParams.append('mpURL', mp.url);
+    }
+    url.searchParams.append('rid', options.requestId);
+    return url.href;
+  }
+  return `https://${ref}--${repo}--${owner}.hlx.page${path}`;
+}
+
+/**
+ * Fetches a document, either by using the content-proxy service or going to a CDN.
  *
  * @param {object}   opts options
  * @param {string}   opts.owner the GitHub org or username
@@ -42,28 +84,13 @@ const PASSTHROUGH_HEADERS = [
  */
 async function contentProxy(opts) {
   const {
-    owner, repo, ref, path, mp, log, options, resolver,
+    log, options,
   } = opts;
-  const url = resolver.createURL({
-    package: 'helix-services',
-    name: 'content-proxy',
-    version: 'v2',
-  });
-  url.searchParams.append('owner', owner);
-  url.searchParams.append('repo', repo);
-  url.searchParams.append('ref', ref);
-  url.searchParams.append('path', path);
 
-  if (mp) {
-    url.searchParams.append('mpType', mp.type);
-    url.searchParams.append('mpRelPath', mp.relPath);
-    url.searchParams.append('mpURL', mp.url);
-  }
+  const url = createURL(opts);
+  log.info(`Fetching content from: ${url}`);
 
-  url.searchParams.append('rid', options.requestId);
-
-  log.info(`Fetching content from: ${url.href}`);
-  const resp = await fetch(url.href, getFetchOptions(options));
+  const resp = await fetch(url, getFetchOptions(options));
   const body = await resp.buffer();
   if (resp.ok) {
     const headers = {};
@@ -78,7 +105,7 @@ async function contentProxy(opts) {
       headers,
     });
   }
-  log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url.href} (${resp.status}) from content-proxy: ${resp.headers.get('x-error')}`);
+  log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url} (${resp.status}): ${resp.headers.get('x-error')}`);
   return new Response(body, {
     status: propagateStatusCode(resp.status),
     headers: {
