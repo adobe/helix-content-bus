@@ -34,6 +34,16 @@ const SPEC_ROOT = resolve(__dirname, 'specs');
 class AWSStorageMock extends AWSStorage {
   // eslint-disable-next-line class-methods-use-this, no-empty-function
   async store() {}
+
+  // eslint-disable-next-line class-methods-use-this
+  async load(key) {
+    const fsPath = resolve(SPEC_ROOT, basename(key));
+    if (fs.existsSync(fsPath)) {
+      const body = fs.readFileSync(fsPath, 'utf-8');
+      return new Response(body, { status: 200 });
+    }
+    return new Response(`File not found: ${fsPath}`, { status: 404 });
+  }
 }
 
 const { main: proxyMain } = proxyquire('../src/index.js', {
@@ -66,7 +76,7 @@ describe('Index Tests', () => {
       .persist();
   });
 
-  it('index function returns 400 if path is missing', async () => {
+  it('returns 400 if path is missing', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -77,7 +87,7 @@ describe('Index Tests', () => {
     assert.match(res.body, /required/);
   });
 
-  it('index function returns 400 if no mountpoint matches path', async () => {
+  it('returns 400 if no mountpoint matches path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -89,7 +99,7 @@ describe('Index Tests', () => {
     assert.match(res.body, /not mounted/);
   });
 
-  it('call index function with an existing path', async () => {
+  it('with an existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -104,7 +114,7 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 200);
   });
 
-  it('call index function with a non-existing path', async () => {
+  it('with a non-existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',

@@ -12,16 +12,18 @@
 
 'use strict';
 
-const crypto = require('crypto');
 const {
   S3Client,
   CreateBucketCommand,
   GetBucketTaggingCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   PutBucketTaggingCommand,
   PutObjectCommand,
   PutPublicAccessBlockCommand,
 } = require('@aws-sdk/client-s3');
+
+const { Response } = require('@adobe/helix-fetch');
 
 /**
  * Template bucket we use for copying the tags.
@@ -41,17 +43,55 @@ const AWS_S3_SYSTEM_HEADERS = [
  * AWS Storage class
  */
 class AWSStorage {
+  // constructor(opts) {
+  //   const {
+  //     AWS_S3_REGION: region,
+  //     AWS_S3_ACCESS_KEY_ID: accessKeyId,
+  //     AWS_S3_SECRET_ACCESS_KEY: secretAccessKey,
+  //     mount,
+  //     log = console,
+  //   } = opts;
+
+  //   if (!mount) {
+  //     throw new Error('mount is required.');
+  //   }
+
+  //   if (region && accessKeyId && secretAccessKey) {
+  //     log.info('Creating S3Client with credentials');
+  //     this._s3 = new S3Client({
+  //       region,
+  //       credentials: {
+  //         accessKeyId,
+  //         secretAccessKey,
+  //       },
+  //     });
+  //   } else {
+  //     log.info('Creating S3Client without credentials');
+  //     this._s3 = new S3Client();
+  //   }
+  //   const sha256 = crypto
+  //     .createHash('sha256')
+  //     .update(mount.url)
+  //     .digest('hex');
+
+  //   this._bucket = `h3${sha256.substr(0, 59)}`;
+  //   this._mountUrl = mount.url;
+  //   this._log = log;
+  // }
+
   constructor(opts) {
     const {
       AWS_S3_REGION: region,
       AWS_S3_ACCESS_KEY_ID: accessKeyId,
       AWS_S3_SECRET_ACCESS_KEY: secretAccessKey,
-      mount,
+      bucket,
+      tags = [],
+      readOnly = false,
       log = console,
     } = opts;
 
-    if (!mount) {
-      throw new Error('mount is required.');
+    if (!bucket) {
+      throw new Error('bucket is required.');
     }
 
     if (region && accessKeyId && secretAccessKey) {
@@ -67,13 +107,9 @@ class AWSStorage {
       log.info('Creating S3Client without credentials');
       this._s3 = new S3Client();
     }
-    const sha256 = crypto
-      .createHash('sha256')
-      .update(mount.url)
-      .digest('hex');
-
-    this._bucket = `h3${sha256.substr(0, 59)}`;
-    this._mountUrl = mount.url;
+    this._bucket = bucket;
+    this._tags = tags;
+    this._readOnly = readOnly;
     this._log = log;
   }
 
@@ -123,7 +159,8 @@ class AWSStorage {
     }));
 
     // Put required tags
-    tags.push({ Key: 'mountpoint', Value: decodeURI(this._mountUrl) });
+    // tags.push({ Key: 'mountpoint', Value: decodeURI(this._mountUrl) });
+    tags.push(...this._tags);
     await this.client.send(new PutBucketTaggingCommand({
       Bucket: this._bucket,
       Tagging: {
@@ -138,19 +175,38 @@ class AWSStorage {
       return;
     }
 
-    const exists = await this._bucketExists();
-    if (!exists) {
-      await this._bucketCreate();
+    if (!this._readOnly) {
+      const exists = await this._bucketExists();
+      if (!exists) {
+        await this._bucketCreate();
+      }
     }
     this._initialized = true;
   }
 
-  async store(prefix, path, res) {
+  async load(key) {
+    await this._init();
+
+    const { log } = this;
+
+    const input = {
+      Bucket: this.bucket,
+      Key: key,
+    };
+
+    const result = await this.client.send(new GetObjectCommand(input));
+    log.info(`Object downloaded from: ${this.bucket}/${key}`);
+    return new Response(result.Body, {});
+  }
+
+  async store(key, res) {
+    if (this._readOnly) {
+      throw new Error(`Storage is read-only: ${this._bucket}`);
+    }
     await this._init();
 
     const { log } = this;
     const body = await res.buffer();
-    const key = `${prefix}${path}`;
 
     const input = {
       Body: body,
