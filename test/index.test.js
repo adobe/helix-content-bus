@@ -99,7 +99,7 @@ describe('Index Tests', () => {
     assert.match(res.body, /not mounted/);
   });
 
-  it('with an existing path', async () => {
+  it('returns 200 with an existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -114,7 +114,7 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 200);
   });
 
-  it('with a non-existing path', async () => {
+  it('returns 404 with a non-existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',

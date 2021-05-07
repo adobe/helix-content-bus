@@ -123,7 +123,6 @@ class AWSStorage {
     }));
 
     // Put required tags
-    // tags.push({ Key: 'mountpoint', Value: decodeURI(this._mountUrl) });
     tags.push(...this._tags);
     await this.client.send(new PutBucketTaggingCommand({
       Bucket: this._bucket,
