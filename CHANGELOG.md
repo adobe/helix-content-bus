@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/adobe/helix-content-bus/compare/v1.1.6...v1.1.7) (2021-05-07)
+
+
+### Bug Fixes
+
+* use hlx.page ([#25](https://github.com/adobe/helix-content-bus/issues/25)) ([01ac16c](https://github.com/adobe/helix-content-bus/commit/01ac16cb9e936afb927742a78309f2f03922ab18))
+
 ## [1.1.6](https://github.com/adobe/helix-content-bus/compare/v1.1.5...v1.1.6) (2021-05-06)
 
 
