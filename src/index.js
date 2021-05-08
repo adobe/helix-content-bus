@@ -73,7 +73,7 @@ async function main(req, context) {
     });
     const buffer = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
     if (!buffer) {
-      return new Response(`${owner}/${repo}/${ref}/fstab.yaml not found`, {
+      return new Response(`${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`, {
         status: 400,
       });
     }
