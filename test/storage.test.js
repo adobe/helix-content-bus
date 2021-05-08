@@ -20,7 +20,6 @@ process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 const assert = require('assert');
 const proxyquire = require('proxyquire');
 
-const { MountConfig } = require('@adobe/helix-shared-config');
 const { condit } = require('@adobe/helix-testutils');
 const { Response } = require('@adobe/helix-universal');
 
@@ -245,12 +244,7 @@ describe('Live Storage Tests', () => {
       bucket: 'helix-code-bus',
       readOnly: true,
     });
-    try {
-      const res = await storage.load('adobe/spark-website/main/fstab.yam');
-      const fstab = await new MountConfig().withSource(await res.text()).init();
-      assert.notStrictEqual(fstab, null);
-    } catch (e) {
-      console.log(e);
-    }
+    const res = await storage.load('adobe/spark-website/main/fstab.yaml');
+    assert.notStrictEqual(res, null);
   }).timeout(20000);
 });
