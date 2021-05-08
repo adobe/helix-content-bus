@@ -244,7 +244,7 @@ describe('Live Storage Tests', () => {
       bucket: 'helix-code-bus',
       readOnly: true,
     });
-    const res = await storage.load('adobe/spark-website/main/fstab.yaml');
-    assert.notStrictEqual(res, null);
+    const buf = await storage.load('adobe/spark-website/main/fstab.yaml');
+    assert.notStrictEqual(buf, null);
   }).timeout(20000);
 });

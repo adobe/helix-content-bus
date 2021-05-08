@@ -43,6 +43,20 @@ const AWS_S3_SYSTEM_HEADERS = [
  * AWS Storage class
  */
 class AWSStorage {
+  /*
+   * Create an instance
+   *
+   * @param {object}   opts options
+   * @param {string}   opts.AWS_S3_REGION AWS region (optional)
+   * @param {string}   opts.AWS_S3_ACCESS_KEY_ID AWS access key (optional)
+   * @param {string}   opts.AWS_S3_SECRET_ACCESS_KEY AWS secret access key (optional)
+   * @param {string}   opts.bucket S3 bucket id
+   * @param {string}   opts.tags tags to add to new buckets
+   * @param {object}   opts.readOnly flag indicating whether bucket should never be created
+   * @param {object}   opts.log logger
+   *
+   * @returns AWSStorage instance
+   */
   constructor(opts) {
     const {
       AWS_S3_REGION: region,
@@ -147,6 +161,12 @@ class AWSStorage {
     this._initialized = true;
   }
 
+  /**
+   * Return an object contents.
+   *
+   * @param {string} key object key
+   * @returns object contents as a Buffer or null
+   */
   async load(key) {
     await this._init();
 
@@ -160,7 +180,8 @@ class AWSStorage {
     try {
       const result = await this.client.send(new GetObjectCommand(input));
       log.info(`Object downloaded from: ${this.bucket}/${key}`);
-      return new Response(result.Body, {});
+      const res = new Response(result.Body, {});
+      return await res.buffer();
     } catch (e) {
       /* istanbul ignore next */
       if (e.$metadata.httpStatusCode !== 404) {
@@ -170,6 +191,13 @@ class AWSStorage {
     }
   }
 
+  /**
+   * Store an object contents, along with headers.
+   *
+   * @param {string} key object key
+   * @param {Response} res response to store
+   * @returns result obtained from S3
+   */
   async store(key, res) {
     if (this._readOnly) {
       throw new Error(`Storage is read-only: ${this._bucket}`);
@@ -202,6 +230,9 @@ class AWSStorage {
     return result;
   }
 
+  /**
+   * Close this storage. Destroys the S3 client used.
+   */
   close() {
     this.client.destroy();
   }

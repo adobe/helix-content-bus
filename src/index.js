@@ -71,13 +71,13 @@ async function main(req, context) {
       readOnly: true,
       log,
     });
-    const res = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
-    if (!res) {
+    const buffer = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
+    if (!buffer) {
       return new Response(`${owner}/${repo}/${ref}/fstab.yaml not found`, {
         status: 400,
       });
     }
-    fstab = await new MountConfig().withSource(await res.text()).init();
+    fstab = await new MountConfig().withSource(buffer.toString()).init();
   } finally {
     /* istanbul ignore else */
     if (codeStorage) {

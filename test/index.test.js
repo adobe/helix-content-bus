@@ -39,8 +39,7 @@ class AWSStorageMock extends AWSStorage {
     if (key.startsWith('foo/bar/baz/')) {
       const fsPath = resolve(SPEC_ROOT, basename(key));
       if (fs.existsSync(fsPath)) {
-        const body = fs.readFileSync(fsPath, 'utf-8');
-        return new Response(body, { status: 200 });
+        return fs.readFileSync(fsPath, 'utf-8');
       }
     }
     return null;
