@@ -72,6 +72,11 @@ async function main(req, context) {
       log,
     });
     const res = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
+    if (!res) {
+      return new Response(`${owner}/${repo}/${ref}/fstab.yaml not found`, {
+        status: 400,
+      });
+    }
     fstab = await new MountConfig().withSource(await res.text()).init();
   } finally {
     /* istanbul ignore else */

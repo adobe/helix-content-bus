@@ -157,9 +157,17 @@ class AWSStorage {
       Key: key,
     };
 
-    const result = await this.client.send(new GetObjectCommand(input));
-    log.info(`Object downloaded from: ${this.bucket}/${key}`);
-    return new Response(result.Body, {});
+    try {
+      const result = await this.client.send(new GetObjectCommand(input));
+      log.info(`Object downloaded from: ${this.bucket}/${key}`);
+      return new Response(result.Body, {});
+    } catch (e) {
+      /* istanbul ignore next */
+      if (e.$metadata.httpStatusCode !== 404) {
+        throw e;
+      }
+      return null;
+    }
   }
 
   async store(key, res) {
