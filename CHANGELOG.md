@@ -1,3 +1,10 @@
+## [1.1.10](https://github.com/adobe/helix-content-bus/compare/v1.1.9...v1.1.10) (2021-05-10)
+
+
+### Bug Fixes
+
+* read fstab from code bus ([#26](https://github.com/adobe/helix-content-bus/issues/26)) ([8b6a755](https://github.com/adobe/helix-content-bus/commit/8b6a7558be8d220054f0fbb775bf299dd93210e0))
+
 ## [1.1.9](https://github.com/adobe/helix-content-bus/compare/v1.1.8...v1.1.9) (2021-05-10)
 
 
