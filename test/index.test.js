@@ -83,7 +83,7 @@ describe('Index Tests', () => {
       path: '/outside/page.html',
     });
     assert.strictEqual(res.statusCode, 400);
-    assert.match(res.body, /fstab.yaml not found/);
+    assert.match(res.headers['x-error'], /fstab.yaml not found/);
   });
   it('returns 400 if no mountpoint matches path', async () => {
     const main = retrofit(proxyMain);
@@ -94,7 +94,7 @@ describe('Index Tests', () => {
       path: '/outside/page.html',
     });
     assert.strictEqual(res.statusCode, 400);
-    assert.match(res.body, /not mounted/);
+    assert.match(res.headers['x-error'], /not mounted/);
   });
 
   it('returns 200 with an existing path', async () => {

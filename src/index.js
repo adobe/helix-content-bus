@@ -73,8 +73,12 @@ async function main(req, context) {
     });
     const buffer = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
     if (!buffer) {
-      return new Response(`${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`, {
+      log.error(`${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`);
+      return new Response('', {
         status: 400,
+        headers: {
+          'x-error': `${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`,
+        },
       });
     }
     fstab = await new MountConfig().withSource(buffer.toString()).init();
@@ -87,8 +91,12 @@ async function main(req, context) {
 
   const mp = fstab.match(path);
   if (!mp) {
-    return new Response(`path specified is not mounted in fstab.yaml: ${path}`, {
+    log.error(`path specified is not mounted in fstab.yaml: ${path}`);
+    return new Response('', {
       status: 400,
+      headers: {
+        'x-error': `path specified is not mounted in fstab.yaml: ${path}`,
+      },
     });
   }
 
