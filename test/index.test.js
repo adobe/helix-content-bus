@@ -18,7 +18,6 @@ process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 
 const assert = require('assert');
 const fs = require('fs');
-const nock = require('nock');
 const { basename, resolve } = require('path');
 const proxyquire = require('proxyquire');
 
@@ -34,6 +33,17 @@ const SPEC_ROOT = resolve(__dirname, 'specs');
 class AWSStorageMock extends AWSStorage {
   // eslint-disable-next-line class-methods-use-this, no-empty-function
   async store() {}
+
+  // eslint-disable-next-line class-methods-use-this
+  async load(key) {
+    if (key.startsWith('foo/bar/baz/')) {
+      const fsPath = resolve(SPEC_ROOT, basename(key));
+      if (fs.existsSync(fsPath)) {
+        return fs.readFileSync(fsPath, 'utf-8');
+      }
+    }
+    return null;
+  }
 }
 
 const { main: proxyMain } = proxyquire('../src/index.js', {
@@ -53,20 +63,7 @@ const { main: proxyMain } = proxyquire('../src/index.js', {
 });
 
 describe('Index Tests', () => {
-  before(async () => {
-    nock('https://raw.githubusercontent.com')
-      .get((uri) => uri.startsWith('/foo/bar/baz'))
-      .reply((uri) => {
-        const fsPath = resolve(SPEC_ROOT, basename(uri));
-        if (!fs.existsSync(fsPath)) {
-          return [404, `File not found: ${fsPath}`];
-        }
-        return [200, fs.readFileSync(fsPath, 'utf-8')];
-      })
-      .persist();
-  });
-
-  it('index function returns 400 if path is missing', async () => {
+  it('returns 400 if path is missing', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -77,7 +74,18 @@ describe('Index Tests', () => {
     assert.match(res.body, /required/);
   });
 
-  it('index function returns 400 if no mountpoint matches path', async () => {
+  it('returns 400 if fstab is missing', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'bay',
+      path: '/outside/page.html',
+    });
+    assert.strictEqual(res.statusCode, 400);
+    assert.match(res.headers['x-error'], /fstab.yaml not found/);
+  });
+  it('returns 400 if no mountpoint matches path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -86,10 +94,10 @@ describe('Index Tests', () => {
       path: '/outside/page.html',
     });
     assert.strictEqual(res.statusCode, 400);
-    assert.match(res.body, /not mounted/);
+    assert.match(res.headers['x-error'], /not mounted/);
   });
 
-  it('call index function with an existing path', async () => {
+  it('returns 200 with an existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -104,7 +112,7 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 200);
   });
 
-  it('call index function with a non-existing path', async () => {
+  it('returns 404 with a non-existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -120,7 +128,7 @@ describe('Index Tests', () => {
   });
 });
 
-describe('Live Tests', () => {
+describe('Live Index Tests', () => {
   condit('Store theblog', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
     const main = retrofit(universalMain);
     const res = await main({

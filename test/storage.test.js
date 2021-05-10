@@ -19,9 +19,13 @@ process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 
 const assert = require('assert');
 const proxyquire = require('proxyquire');
+
+const { condit } = require('@adobe/helix-testutils');
 const { Response } = require('@adobe/helix-universal');
 
-const { AWSStorage } = proxyquire('../src/storage.js', {
+const { AWSStorage } = require('../src/storage.js');
+
+const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
   '@aws-sdk/client-s3': {
     S3Client: class {
       // eslint-disable-next-line class-methods-use-this
@@ -62,6 +66,23 @@ const { AWSStorage } = proxyquire('../src/storage.js', {
         return { $metadata: { httpStatusCode: 200 } };
       }
     },
+    GetObjectCommand: class {
+      constructor({ Key, Bucket }) {
+        this._key = Key;
+        this._bucket = Bucket;
+      }
+
+      run(storage) {
+        const objs = storage.get(this._bucket);
+        if (!objs) {
+          const e = new Error();
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        return objs.find((obj) => obj === this._key);
+      }
+    },
+
     PutObjectCommand: class {
       constructor({ Key, Bucket }) {
         this._key = Key;
@@ -113,57 +134,117 @@ describe('Storage Tests', () => {
   });
   it('constructor succeeds if required parameters are there', async () => {
     assert.doesNotThrow(() => new AWSStorage({
-      mount: { url: 'mymount' },
+      bucket: 'bloop',
     }));
   });
   it('store item to non existing bucket with missing template bucket', async () => {
-    const storage = new AWSStorage({
+    const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
       AWS_S3_ACCESS_KEY_ID: 'bar',
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
-      mount: { url: 'mymount' },
+      bucket: 'bloop',
     });
     storage.client.storage = new Map();
 
     await assert.rejects(() => storage.store(
-      'live', '/path', new Response('body', { status: 200 }),
+      'live/path', new Response('body', { status: 200 }),
     ));
   });
   it('store 2 items to non existing bucket', async () => {
-    const storage = new AWSStorage({
+    const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
       AWS_S3_ACCESS_KEY_ID: 'bar',
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
-      mount: { url: 'mymount' },
+      bucket: 'bloop',
     });
     const memStorage = new Map();
     memStorage.set('helix-content-bus-template', []);
     storage.client.storage = memStorage;
 
     await assert.doesNotReject(() => storage.store(
-      'live', '/path', new Response('body', {
+      'live/path', new Response('body', {
         status: 200,
         headers: { 'last-modified': 'Tue, 20 Apr 2021 23:51:03 GMT' },
       }),
     ));
     await assert.doesNotReject(() => storage.store(
-      'live', '/path2', new Response('body', { status: 200 }),
+      'live/path2', new Response('body', { status: 200 }),
     ));
   });
 
   it('store item to existing bucket', async () => {
-    const storage = new AWSStorage({
+    const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
       AWS_S3_ACCESS_KEY_ID: 'bar',
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
-      mount: { url: 'mymount2' },
+      bucket: 'bloop',
     });
     const memStorage = new Map();
-    memStorage.set('h3c4fbb7d701e130329d716baabc51d95ef3a9fb6bbc2df1f469caf2150fd', []);
+    memStorage.set('bloop', []);
     storage.client.storage = memStorage;
 
     await assert.doesNotReject(() => storage.store(
-      'live', '/path', new Response('body', { status: 200 }),
+      'live/path', new Response('body', { status: 200 }),
+    ));
+    await assert.doesNotReject(() => storage.load(
+      'live/path',
     ));
   });
+  it('load existing item from read-only storage', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+      readOnly: true,
+    });
+    const memStorage = new Map();
+    memStorage.set('bloop', ['live/path']);
+    storage.client.storage = memStorage;
+
+    await assert.doesNotReject(() => storage.load(
+      'live/path',
+    ));
+  });
+
+  it('load missing item from read-only storage', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+      readOnly: true,
+    });
+    const memStorage = new Map();
+    storage.client.storage = memStorage;
+
+    assert.strictEqual(await storage.load('live/path'), null);
+  });
+
+  it('store item to read-only storage', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+      readOnly: true,
+    });
+    await assert.rejects(() => storage.store(
+      'live/path', new Response('body', { status: 200 }),
+    ));
+  });
+});
+
+describe('Live Storage Tests', () => {
+  condit('Read from code bus', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+    const storage = new AWSStorage({
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+      bucket: 'helix-code-bus',
+      readOnly: true,
+    });
+    const buf = await storage.load('adobe/spark-website/main/fstab.yaml');
+    assert.notStrictEqual(buf, null);
+  }).timeout(20000);
 });

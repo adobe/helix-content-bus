@@ -12,11 +12,13 @@
 
 'use strict';
 
+const crypto = require('crypto');
+
 const { AbortError, FetchError } = require('@adobe/helix-fetch');
 const { logger } = require('@adobe/helix-universal-logger');
 const wrap = require('@adobe/helix-shared-wrap');
 const bodyData = require('@adobe/helix-shared-body-data');
-const { requiredConfig } = require('@adobe/helix-shared-config');
+const { MountConfig } = require('@adobe/helix-shared-config');
 const { wrap: helixStatus } = require('@adobe/helix-status');
 const { Response } = require('@adobe/helix-universal');
 
@@ -57,10 +59,44 @@ async function main(req, context) {
     });
   }
 
-  const mp = context.config.fstab.match(path);
+  let codeStorage;
+  let fstab;
+
+  try {
+    codeStorage = new AWSStorage({
+      AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY,
+      bucket: 'helix-code-bus',
+      readOnly: true,
+      log,
+    });
+    const buffer = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
+    if (!buffer) {
+      log.error(`${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`);
+      return new Response('', {
+        status: 400,
+        headers: {
+          'x-error': `${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`,
+        },
+      });
+    }
+    fstab = await new MountConfig().withSource(buffer.toString()).init();
+  } finally {
+    /* istanbul ignore else */
+    if (codeStorage) {
+      codeStorage.close();
+    }
+  }
+
+  const mp = fstab.match(path);
   if (!mp) {
-    return new Response(`path specified is not mounted in fstab.yaml: ${path}`, {
+    log.error(`path specified is not mounted in fstab.yaml: ${path}`);
+    return new Response('', {
       status: 400,
+      headers: {
+        'x-error': `path specified is not mounted in fstab.yaml: ${path}`,
+      },
     });
   }
 
@@ -74,14 +110,20 @@ async function main(req, context) {
     token: req.headers.get('x-github-token'),
   };
 
-  let storage;
+  let contentStorage;
 
   try {
-    storage = new AWSStorage({
+    const sha256 = crypto
+      .createHash('sha256')
+      .update(mp.url)
+      .digest('hex');
+
+    contentStorage = new AWSStorage({
       AWS_S3_REGION,
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
-      mount: mp,
+      bucket: `h3${sha256.substr(0, 59)}`,
+      tags: [{ Key: 'mountpoint', Value: decodeURI(mp.url) }],
       log,
     });
 
@@ -92,7 +134,7 @@ async function main(req, context) {
     if (!res.ok) {
       return res;
     }
-    const output = await storage.store(prefix, path, res);
+    const output = await contentStorage.store(`${prefix}${path}`, res);
     return new Response(JSON.stringify(output, null, 2), {
       status: 200,
     });
@@ -116,14 +158,13 @@ async function main(req, context) {
     return unknown(e, log);
   } finally {
     /* istanbul ignore else */
-    if (storage) {
-      storage.close();
+    if (contentStorage) {
+      contentStorage.close();
     }
   }
 }
 
 module.exports.main = wrap(main)
-  .with(requiredConfig, 'fstab')
   .with(bodyData)
   .with(helixStatus)
   .with(logger.trace)
