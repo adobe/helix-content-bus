@@ -1,3 +1,10 @@
+## [1.1.13](https://github.com/adobe/helix-content-bus/compare/v1.1.12...v1.1.13) (2021-05-12)
+
+
+### Bug Fixes
+
+* store content gzipped, uncompress before returning ([#35](https://github.com/adobe/helix-content-bus/issues/35)) ([396c134](https://github.com/adobe/helix-content-bus/commit/396c134384567270b232f78532d0a72c9ac63911))
+
 ## [1.1.12](https://github.com/adobe/helix-content-bus/compare/v1.1.11...v1.1.12) (2021-05-11)
 
 
