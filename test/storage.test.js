@@ -62,7 +62,7 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
           e.$metadata = { httpStatusCode: 409 };
           throw e;
         }
-        storage.set(this._bucket, []);
+        storage.set(this._bucket, new Map());
         return { $metadata: { httpStatusCode: 200 } };
       }
     },
@@ -79,14 +79,24 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
           e.$metadata = { httpStatusCode: 404 };
           throw e;
         }
-        return objs.find((obj) => obj === this._key);
+        const obj = objs.get(this._key);
+        if (!obj) {
+          const e = new Error();
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        return obj;
       }
     },
 
     PutObjectCommand: class {
-      constructor({ Key, Bucket }) {
-        this._key = Key;
+      constructor({
+        Bucket, Key, Body, ContentEncoding,
+      }) {
         this._bucket = Bucket;
+        this._key = Key;
+        this._body = Body;
+        this._encoding = ContentEncoding;
       }
 
       run(storage) {
@@ -96,7 +106,10 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
           e.$metadata = { httpStatusCode: 404 };
           throw e;
         }
-        objs.push(this._key);
+        objs.set(this._key, {
+          Body: this._body,
+          ContentEncoding: this._encoding,
+        });
       }
     },
     GetBucketTaggingCommand: class {
@@ -180,15 +193,12 @@ describe('Storage Tests', () => {
       bucket: 'bloop',
     });
     const memStorage = new Map();
-    memStorage.set('bloop', []);
+    memStorage.set('bloop', new Map());
     storage.client.storage = memStorage;
 
-    await assert.doesNotReject(() => storage.store(
-      'live/path', new Response('body', { status: 200 }),
-    ));
-    await assert.doesNotReject(() => storage.load(
-      'live/path',
-    ));
+    await storage.store('live/path', new Response('body', { status: 200 }));
+    const buf = await storage.load('live/path');
+    assert.strictEqual(buf.toString(), 'body');
   });
   it('load existing item from read-only storage', async () => {
     const storage = new AWSStorageProxy({
@@ -198,13 +208,14 @@ describe('Storage Tests', () => {
       bucket: 'bloop',
       readOnly: true,
     });
+    const bucket = new Map();
+    bucket.set('live/path', { Body: 'body' });
     const memStorage = new Map();
-    memStorage.set('bloop', ['live/path']);
+    memStorage.set('bloop', bucket);
     storage.client.storage = memStorage;
 
-    await assert.doesNotReject(() => storage.load(
-      'live/path',
-    ));
+    const buf = await storage.load('live/path');
+    assert.strictEqual(buf.toString(), 'body');
   });
 
   it('load missing item from read-only storage', async () => {

@@ -12,6 +12,9 @@
 
 'use strict';
 
+const { promisify } = require('util');
+const zlib = require('zlib');
+
 const {
   S3Client,
   CreateBucketCommand,
@@ -24,6 +27,9 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const { Response } = require('@adobe/helix-fetch');
+
+const gzip = promisify(zlib.gzip);
+const gunzip = promisify(zlib.gunzip);
 
 /**
  * Template bucket we use for copying the tags.
@@ -180,8 +186,12 @@ class AWSStorage {
     try {
       const result = await this.client.send(new GetObjectCommand(input));
       log.info(`Object downloaded from: ${this.bucket}/${key}`);
-      const res = new Response(result.Body, {});
-      return await res.buffer();
+
+      const buf = await new Response(result.Body, {}).buffer();
+      if (result.ContentEncoding === 'gzip') {
+        return await gunzip(buf);
+      }
+      return buf;
     } catch (e) {
       /* istanbul ignore next */
       if (e.$metadata.httpStatusCode !== 404) {
@@ -206,10 +216,12 @@ class AWSStorage {
 
     const { log } = this;
     const body = await res.buffer();
+    const zipped = await gzip(body);
 
     const input = {
-      Body: body,
+      Body: zipped,
       Bucket: this.bucket,
+      ContentEncoding: 'gzip',
       Metadata: {},
       Key: key,
     };
