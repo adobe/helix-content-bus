@@ -134,8 +134,8 @@ async function main(req, context) {
     if (!res.ok) {
       return res;
     }
-    const output = await contentStorage.store(`${prefix}${path}`, res);
-    return new Response(JSON.stringify(output, null, 2), {
+    await contentStorage.store(`${prefix}${path}`, res);
+    return new Response('', {
       status: 200,
     });
   } catch (e) {

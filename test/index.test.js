@@ -32,7 +32,13 @@ const SPEC_ROOT = resolve(__dirname, 'specs');
 
 class AWSStorageMock extends AWSStorage {
   // eslint-disable-next-line class-methods-use-this, no-empty-function
-  async store() {}
+  async store() {
+    return {
+      $metadata: {
+        httpStatusCode: 200,
+      },
+    };
+  }
 
   // eslint-disable-next-line class-methods-use-this
   async load(key) {
@@ -97,7 +103,7 @@ describe('Index Tests', () => {
     assert.match(res.headers['x-error'], /not mounted/);
   });
 
-  it('returns 200 with an existing path', async () => {
+  it('returns 200 w/o schnickschnack with an existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
       owner: 'foo',
@@ -110,6 +116,7 @@ describe('Index Tests', () => {
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
     }, true);
     assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, '');
   });
 
   it('returns 404 with a non-existing path', async () => {
