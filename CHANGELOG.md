@@ -1,3 +1,10 @@
+## [1.1.14](https://github.com/adobe/helix-content-bus/compare/v1.1.13...v1.1.14) (2021-05-13)
+
+
+### Bug Fixes
+
+* return 200 w/o schnickschnack ([f0285e0](https://github.com/adobe/helix-content-bus/commit/f0285e053e457f8f2d5745fcb2efeb1c1c115558))
+
 ## [1.1.13](https://github.com/adobe/helix-content-bus/compare/v1.1.12...v1.1.13) (2021-05-12)
 
 
