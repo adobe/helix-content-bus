@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/adobe/helix-content-bus#readme",
   "dependencies": {
-    "@adobe/helix-fetch": "2.2.0",
+    "@adobe/helix-fetch": "2.2.1",
     "@adobe/helix-shared-body-data": "1.0.4",
     "@adobe/helix-shared-config": "1.1.1",
     "@adobe/helix-shared-utils": "1.0.3",
@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@adobe/eslint-config-helix": "1.1.5",
-    "@adobe/helix-deploy": "4.5.1",
+    "@adobe/helix-deploy": "4.6.0",
     "@adobe/helix-testutils": "0.4.5",
     "@semantic-release/changelog": "5.0.1",
     "@semantic-release/exec": "5.0.0",
