@@ -74,7 +74,7 @@ jobs:
       # see https://circleci.com/orbs/registry/orb/adobe/helix-post-deploy
       # for more available parameters
       - helix-post-deploy/monitoring:
-          targets: aws, google
+          targets: aws
           statuspage_name: Helix Content Bus
           statuspage_group: Publishing
           newrelic_group_policy: Publishing Repeated Failure
