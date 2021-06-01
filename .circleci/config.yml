@@ -78,7 +78,7 @@ jobs:
           statuspage_name: Helix Content Bus
           statuspage_group: Publishing
           newrelic_group_policy: Publishing Repeated Failure
-          newrelic_group_targets: aws, google
+          newrelic_group_targets: aws
           incubator: true # remove only when promoting service to production
 
   branch-deploy:
