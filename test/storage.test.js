@@ -89,6 +89,29 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
       }
     },
 
+    HeadObjectCommand: class {
+      constructor({ Key, Bucket }) {
+        this._key = Key;
+        this._bucket = Bucket;
+      }
+
+      run(storage) {
+        const objs = storage.get(this._bucket);
+        if (!objs) {
+          const e = new Error();
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        const obj = objs.get(this._key);
+        if (!obj) {
+          const e = new Error();
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        return obj;
+      }
+    },
+
     PutObjectCommand: class {
       constructor({
         Bucket, Key, Body, ContentEncoding,
@@ -200,6 +223,7 @@ describe('Storage Tests', () => {
     const buf = await storage.load('live/path');
     assert.strictEqual(buf.toString(), 'body');
   });
+
   it('load existing item from read-only storage', async () => {
     const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
@@ -218,6 +242,23 @@ describe('Storage Tests', () => {
     assert.strictEqual(buf.toString(), 'body');
   });
 
+  it('load existing item\'s metadata from read-only storage', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+      readOnly: true,
+    });
+    const bucket = new Map();
+    bucket.set('live/path', { Metadata: { 'last-modified': 'Fri, 07 May 2021 18:03:19 GMT' } });
+    const memStorage = new Map();
+    memStorage.set('bloop', bucket);
+    storage.client.storage = memStorage;
+
+    assert.notStrictEqual(await storage.metadata('live/path'), null);
+  });
+
   it('load missing item from read-only storage', async () => {
     const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
@@ -230,6 +271,20 @@ describe('Storage Tests', () => {
     storage.client.storage = memStorage;
 
     assert.strictEqual(await storage.load('live/path'), null);
+  });
+
+  it('load missing item\'s metadata from read-only storage', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+      readOnly: true,
+    });
+    const memStorage = new Map();
+    storage.client.storage = memStorage;
+
+    assert.strictEqual(await storage.metadata('live/path'), null);
   });
 
   it('store item to read-only storage', async () => {
@@ -257,5 +312,16 @@ describe('Live Storage Tests', () => {
     });
     const buf = await storage.load('adobe/spark-website/main/fstab.yaml');
     assert.notStrictEqual(buf, null);
+  }).timeout(20000);
+  condit('Read metadata from content bus', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+    const storage = new AWSStorage({
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+      bucket: 'h3b65dd98f8856eb616d04a58e04fe37077b50caa3174eae30f166dc4ff3f',
+      readOnly: true,
+    });
+    const { 'last-modified': lastModified } = await storage.metadata('live/express/create/advertisement/cyber-monday.md');
+    assert.notStrictEqual(lastModified, null);
   }).timeout(20000);
 });

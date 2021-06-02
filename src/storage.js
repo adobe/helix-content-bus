@@ -24,6 +24,7 @@ const {
   PutBucketTaggingCommand,
   PutObjectCommand,
   PutPublicAccessBlockCommand,
+  HeadObjectCommand,
 } = require('@aws-sdk/client-s3');
 
 const { Response } = require('@adobe/helix-fetch');
@@ -192,6 +193,35 @@ class AWSStorage {
         return await gunzip(buf);
       }
       return buf;
+    } catch (e) {
+      /* istanbul ignore next */
+      if (e.$metadata.httpStatusCode !== 404) {
+        throw e;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Return an object's metadata.
+   *
+   * @param {string} key object key
+   * @returns object metadata or null
+   */
+  async metadata(key) {
+    await this._init();
+
+    const { log } = this;
+
+    const input = {
+      Bucket: this.bucket,
+      Key: key,
+    };
+
+    try {
+      const result = await this.client.send(new HeadObjectCommand(input));
+      log.info(`Object metadata loaded for: ${this.bucket}/${key}`);
+      return result.Metadata;
     } catch (e) {
       /* istanbul ignore next */
       if (e.$metadata.httpStatusCode !== 404) {

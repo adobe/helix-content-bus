@@ -50,7 +50,8 @@ async function main(req, context) {
   } = env;
 
   const {
-    owner, repo, ref, path, prefix = 'live',
+    owner, repo, ref, path,
+    prefix = 'live', useCDN = true, useLastModified = false,
   } = context.data;
 
   if (!(owner && repo && ref && path)) {
@@ -117,6 +118,7 @@ async function main(req, context) {
       .createHash('sha256')
       .update(mp.url)
       .digest('hex');
+    const key = `${prefix}${path}`;
 
     contentStorage = new AWSStorage({
       AWS_S3_REGION,
@@ -127,14 +129,20 @@ async function main(req, context) {
       log,
     });
 
-    const useCDN = true;
+    if (useLastModified) {
+      const metadata = await contentStorage.metadata(key);
+      if (metadata) {
+        options.lastModified = metadata['last-modified'];
+      }
+    }
+
     const res = await contentProxy({
       owner, repo, ref, path, mp, log, options, resolver, useCDN,
     });
     if (!res.ok) {
       return res;
     }
-    await contentStorage.store(`${prefix}${path}`, res);
+    await contentStorage.store(key, res);
     return new Response('', {
       status: 200,
     });

@@ -113,7 +113,10 @@ describe('Content Proxy Tests', () => {
           url: 'https://adobe.sharepoint.com/mymount',
         },
         log: console,
-        options: { requestId: '1234' },
+        options: {
+          requestId: '1234',
+          lastModified: 'Fri, 07 May 2021 18:03:19 GMT',
+        },
         resolver,
         useCDN,
       };
