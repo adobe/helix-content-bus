@@ -11,6 +11,7 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable class-methods-use-this */
 
 'use strict';
 
@@ -31,7 +32,6 @@ const { retrofit } = require('./utils.js');
 const SPEC_ROOT = resolve(__dirname, 'specs');
 
 class AWSStorageMock extends AWSStorage {
-  // eslint-disable-next-line class-methods-use-this, no-empty-function
   async store() {
     return {
       $metadata: {
@@ -40,7 +40,6 @@ class AWSStorageMock extends AWSStorage {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async load(key) {
     if (key.startsWith('foo/bar/baz/')) {
       const fsPath = resolve(SPEC_ROOT, basename(key));
@@ -50,6 +49,29 @@ class AWSStorageMock extends AWSStorage {
     }
     return null;
   }
+
+  async metadata(key) {
+    if (key.startsWith('foo/bar/baz/') || key.startsWith('live/mnt/')) {
+      const fsPath = resolve(SPEC_ROOT, `${basename(key)}.json`);
+      if (fs.existsSync(fsPath)) {
+        return JSON.parse(fs.readFileSync(fsPath, 'utf-8'));
+      }
+    }
+    return null;
+  }
+}
+
+function notModified(path, lastSeen) {
+  const metadataPath = resolve(SPEC_ROOT, `${basename(path)}.json`);
+  if (fs.existsSync(metadataPath)) {
+    const { 'last-modified': lastModified } = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+    const lastSeenMs = Date.parse(lastSeen);
+    const lastModifiedMs = Date.parse(lastModified);
+    if (lastSeenMs >= lastModifiedMs) {
+      return true;
+    }
+  }
+  return false;
 }
 
 const { main: proxyMain } = proxyquire('../src/index.js', {
@@ -57,7 +79,10 @@ const { main: proxyMain } = proxyquire('../src/index.js', {
     AWSStorage: AWSStorageMock,
   },
   './content-proxy.js': {
-    contentProxy: async ({ path }) => {
+    contentProxy: async ({ path, options }) => {
+      if (options.lastModified && notModified(path, options.lastModified)) {
+        return new Response('Not modified', { status: 304 });
+      }
       const fsPath = resolve(SPEC_ROOT, basename(path));
       if (fs.existsSync(fsPath)) {
         const body = fs.readFileSync(fsPath, 'utf-8');
@@ -119,6 +144,22 @@ describe('Index Tests', () => {
     assert.strictEqual(res.body, '');
   });
 
+  it('returns 304 with an existing item that did not change', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/mnt/example-post.md',
+      useLastModified: true,
+    }, {
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+    }, true);
+    assert.strictEqual(res.statusCode, 304);
+  });
+
   it('returns 404 with a non-existing path', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
@@ -126,6 +167,7 @@ describe('Index Tests', () => {
       repo: 'bar',
       ref: 'baz',
       path: '/mnt/missing.md',
+      useLastModified: true,
     }, {
       AWS_S3_REGION: 'foo',
       AWS_S3_ACCESS_KEY_ID: 'bar',

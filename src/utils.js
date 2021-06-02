@@ -40,6 +40,9 @@ function getFetchOptions(options) {
   if (options.fetchTimeout) {
     fetchopts.signal = timeoutSignal(options.fetchTimeout);
   }
+  if (options.lastModified) {
+    fetchopts.headers['if-modified-since'] = options.lastModified;
+  }
   delete fetchopts.requestId;
   if (fetchopts.token) {
     fetchopts.headers['x-github-token'] = fetchopts.token;
