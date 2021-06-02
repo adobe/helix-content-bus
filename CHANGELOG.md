@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/adobe/helix-content-bus/compare/v1.1.20...v1.2.0) (2021-06-02)
+
+
+### Features
+
+* support if-modified-since ([#53](https://github.com/adobe/helix-content-bus/issues/53)) ([fc0ab8e](https://github.com/adobe/helix-content-bus/commit/fc0ab8ee5575c10bda43fb9bef6dd735c381217b))
+
 ## [1.1.20](https://github.com/adobe/helix-content-bus/compare/v1.1.19...v1.1.20) (2021-05-31)
 
 
