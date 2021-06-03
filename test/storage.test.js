@@ -114,12 +114,13 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
 
     PutObjectCommand: class {
       constructor({
-        Bucket, Key, Body, ContentEncoding,
+        Bucket, Key, Body, ContentEncoding, Metadata,
       }) {
         this._bucket = Bucket;
         this._key = Key;
         this._body = Body;
         this._encoding = ContentEncoding;
+        this._metadata = Metadata;
       }
 
       run(storage) {
@@ -132,6 +133,7 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
         objs.set(this._key, {
           Body: this._body,
           ContentEncoding: this._encoding,
+          Metadata: this._metadata,
         });
       }
     },
@@ -219,9 +221,17 @@ describe('Storage Tests', () => {
     memStorage.set('bloop', new Map());
     storage.client.storage = memStorage;
 
-    await storage.store('live/path', new Response('body', { status: 200 }));
+    await storage.store('live/path', new Response('body', {
+      status: 200,
+      headers: {
+        'last-modified': 'Fri, 07 May 2021 18:03:19 GMT',
+        'x-source-location': 'there',
+      },
+    }));
     const buf = await storage.load('live/path');
     assert.strictEqual(buf.toString(), 'body');
+    const metadata = await storage.metadata('live/path');
+    assert.strictEqual(metadata['x-source-last-modified'], 'Fri, 07 May 2021 18:03:19 GMT');
   });
 
   it('load existing item from read-only storage', async () => {
