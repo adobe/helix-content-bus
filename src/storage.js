@@ -47,6 +47,13 @@ const AWS_S3_SYSTEM_HEADERS = [
 ];
 
 /**
+ * Response header names that need a different metadata name.
+ */
+const METADATA_HEADER_MAP = new Map([
+  ['last-modified', 'x-source-last-modified'],
+]);
+
+/**
  * AWS Storage class
  */
 class AWSStorage {
@@ -263,7 +270,8 @@ class AWSStorage {
         const property = name.split('-').map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1)).join('');
         input[property] = value;
       } else {
-        input.Metadata[name] = value;
+        // use preferred name in metadata if any
+        input.Metadata[METADATA_HEADER_MAP.get(name) || name] = value;
       }
     });
 
