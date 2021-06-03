@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/adobe/helix-content-bus/compare/v1.2.0...v1.2.1) (2021-06-03)
+
+
+### Bug Fixes
+
+* use x-source-last-modified ([#57](https://github.com/adobe/helix-content-bus/issues/57)) ([497bd21](https://github.com/adobe/helix-content-bus/commit/497bd21d0757ab33552c01f7539b6a30ef2e1e31))
+
 # [1.2.0](https://github.com/adobe/helix-content-bus/compare/v1.1.20...v1.2.0) (2021-06-02)
 
 
