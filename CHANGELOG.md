@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/adobe/helix-content-bus/compare/v1.2.1...v1.2.2) (2021-06-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-shared-body-data to v1.0.8 ([#56](https://github.com/adobe/helix-content-bus/issues/56)) ([972b2e8](https://github.com/adobe/helix-content-bus/commit/972b2e85ebae65b45a3e3157d8fd4f195d354769))
+
 ## [1.2.1](https://github.com/adobe/helix-content-bus/compare/v1.2.0...v1.2.1) (2021-06-03)
 
 
