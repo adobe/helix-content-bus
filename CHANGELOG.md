@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/adobe/helix-content-bus/compare/v1.2.4...v1.2.5) (2021-06-08)
+
+
+### Bug Fixes
+
+* boolean values passed as strings must be parsed properly ([#60](https://github.com/adobe/helix-content-bus/issues/60)) ([8c1d42d](https://github.com/adobe/helix-content-bus/commit/8c1d42db87a3d7402b9e7c746731d4460529c2b2))
+
 ## [1.2.4](https://github.com/adobe/helix-content-bus/compare/v1.2.3...v1.2.4) (2021-06-06)
 
 
