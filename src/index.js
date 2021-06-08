@@ -64,7 +64,7 @@ async function main(req, context) {
   } = env;
 
   const {
-    owner, repo, ref, path, prefix = 'live',
+    owner, repo, ref, path, prefix = 'live', action = 'update',
   } = context.data;
 
   const useCDN = parseBoolean(context.data.useCDN, true);
@@ -134,33 +134,39 @@ async function main(req, context) {
       .createHash('sha256')
       .update(mp.url)
       .digest('hex');
-    const key = `${prefix}${path}`;
+    const bucket = `h3${sha256.substr(0, 59)}`;
 
     contentStorage = new AWSStorage({
       AWS_S3_REGION,
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
-      bucket: `h3${sha256.substr(0, 59)}`,
+      bucket,
       tags: [{ Key: 'mountpoint', Value: decodeURI(mp.url) }],
       log,
     });
 
-    if (useLastModified) {
-      const metadata = await contentStorage.metadata(key);
-      if (metadata) {
-        options.lastModified = metadata['last-modified'];
-      }
-    }
+    if (action === 'update') {
+      const key = `${prefix}${path}`;
 
-    const res = await contentProxy({
-      owner, repo, ref, path, mp, log, options, resolver, useCDN,
-    });
-    if (!res.ok) {
-      return res;
+      if (useLastModified) {
+        const metadata = await contentStorage.metadata(key);
+        if (metadata) {
+          options.lastModified = metadata['last-modified'];
+        }
+      }
+      const res = await contentProxy({
+        owner, repo, ref, path, mp, log, options, resolver, useCDN,
+      });
+      if (!res.ok) {
+        return res;
+      }
+      return await contentStorage.store(key, res);
     }
-    await contentStorage.store(key, res);
-    return new Response('', {
-      status: 200,
+    if (action === 'publish') {
+      return await contentStorage.copy(`preview${path}`, `live${path}`);
+    }
+    return new Response(`Action unknown: ${action}`, {
+      status: 400,
     });
   } catch (e) {
     /* istanbul ignore next */

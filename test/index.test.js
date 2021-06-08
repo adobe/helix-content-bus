@@ -32,14 +32,6 @@ const { retrofit } = require('./utils.js');
 const SPEC_ROOT = resolve(__dirname, 'specs');
 
 class AWSStorageMock extends AWSStorage {
-  async store() {
-    return {
-      $metadata: {
-        httpStatusCode: 200,
-      },
-    };
-  }
-
   async load(key) {
     if (key.startsWith('foo/bar/baz/')) {
       const fsPath = resolve(SPEC_ROOT, basename(key));
@@ -58,6 +50,18 @@ class AWSStorageMock extends AWSStorage {
       }
     }
     return null;
+  }
+
+  async store() {
+    return new Response('', {
+      status: 200,
+    });
+  }
+
+  async copy() {
+    return new Response('', {
+      status: 200,
+    });
   }
 }
 
@@ -145,6 +149,23 @@ describe('Index Tests', () => {
     assert.strictEqual(res.body, '');
   });
 
+  it('returns 200 when publishing an existing item', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/mnt/example-post.md',
+      action: 'publish',
+    }, {
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+    }, true);
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, '');
+  });
+
   it('returns 304 with an existing item that did not change', async () => {
     const main = retrofit(proxyMain);
     const res = await main({
@@ -175,6 +196,22 @@ describe('Index Tests', () => {
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
     });
     assert.strictEqual(res.statusCode, 404);
+  });
+
+  it('returns 400 for a unknown action', async () => {
+    const main = retrofit(proxyMain);
+    const res = await main({
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/mnt/missing.md',
+      action: 'energize',
+    }, {
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+    });
+    assert.strictEqual(res.statusCode, 400);
   });
 });
 
