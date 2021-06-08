@@ -315,7 +315,7 @@ class AWSStorage {
       await this.client.send(new CopyObjectCommand(input));
       log.info(`Object copied from ${src} to: ${this.bucket}/${dest}`);
     } catch (e) {
-      log.error(`Unable to copy object from ${src}: ${this.bucket}/${dest}`, e);
+      log.error(`Unable to copy object from ${src} to ${this.bucket}/${dest}`, e);
       return new Response('', {
         status: e.$metadata.httpStatusCode,
       });
