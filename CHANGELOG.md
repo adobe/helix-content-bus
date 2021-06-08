@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/adobe/helix-content-bus/compare/v1.2.5...v1.3.0) (2021-06-08)
+
+
+### Features
+
+* add publish action ([#63](https://github.com/adobe/helix-content-bus/issues/63)) ([d7f5054](https://github.com/adobe/helix-content-bus/commit/d7f50544aef135668661730a21a096da6a8223ae))
+
 ## [1.2.5](https://github.com/adobe/helix-content-bus/compare/v1.2.4...v1.2.5) (2021-06-08)
 
 
