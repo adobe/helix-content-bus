@@ -25,6 +25,7 @@ const {
   PutObjectCommand,
   PutPublicAccessBlockCommand,
   HeadObjectCommand,
+  CopyObjectCommand,
 } = require('@aws-sdk/client-s3');
 
 const { Response } = require('@adobe/helix-fetch');
@@ -275,9 +276,53 @@ class AWSStorage {
       }
     });
 
-    const result = await this.client.send(new PutObjectCommand(input));
-    log.info(`Object uploaded to: ${this.bucket}/${key}`);
-    return result;
+    try {
+      await this.client.send(new PutObjectCommand(input));
+      log.info(`Object uploaded to: ${this.bucket}/${key}`);
+    } catch (e) {
+      log.error(`Unable to upload object to: ${this.bucket}/${key}`, e);
+      return new Response('', {
+        status: e.$metadata.httpStatusCode,
+      });
+    }
+    return new Response('', {
+      status: 200,
+    });
+  }
+
+  /**
+   * Copy an object in the same bucket.
+   *
+   * @param {string} src source key
+   * @param {string} dest destination key
+   * @returns result obtained from S3
+   */
+  async copy(src, dest) {
+    if (this._readOnly) {
+      throw new Error(`Storage is read-only: ${this._bucket}`);
+    }
+    await this._init();
+
+    const { log } = this;
+
+    const input = {
+      Bucket: this.bucket,
+      CopySource: `${this.bucket}/${src}`,
+      Key: dest,
+    };
+
+    try {
+      await this.client.send(new CopyObjectCommand(input));
+      log.info(`Object copied from ${src} to: ${this.bucket}/${dest}`);
+    } catch (e) {
+      log.error(`Unable to copy object from ${src} to ${this.bucket}/${dest}`, e);
+      return new Response('', {
+        status: e.$metadata.httpStatusCode,
+      });
+    }
+    return new Response('', {
+      status: 200,
+    });
   }
 
   /**

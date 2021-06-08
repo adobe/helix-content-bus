@@ -88,7 +88,6 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
         return obj;
       }
     },
-
     HeadObjectCommand: class {
       constructor({ Key, Bucket }) {
         this._key = Key;
@@ -111,7 +110,6 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
         return obj;
       }
     },
-
     PutObjectCommand: class {
       constructor({
         Bucket, Key, Body, ContentEncoding, Metadata,
@@ -125,7 +123,7 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
 
       run(storage) {
         const objs = storage.get(this._bucket);
-        if (!objs) {
+        if (!objs || !objs.set) {
           const e = new Error();
           e.$metadata = { httpStatusCode: 404 };
           throw e;
@@ -161,6 +159,32 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
       // eslint-disable-next-line class-methods-use-this
       run() {
         /* do nothing */
+      }
+    },
+    CopyObjectCommand: class {
+      constructor({
+        Bucket, Key, CopySource,
+      }) {
+        this._bucket = Bucket;
+        this._key = Key;
+        this._copySource = CopySource;
+      }
+
+      run(storage) {
+        const src = this._copySource.split('/').slice(1).join('/');
+        const objs = storage.get(this._bucket);
+        if (!objs) {
+          const e = new Error();
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        const obj = objs.get(src);
+        if (!obj) {
+          const e = new Error();
+          e.$metadata = { httpStatusCode: 404 };
+          throw e;
+        }
+        objs.set(this._key, obj);
       }
     },
   },
@@ -232,6 +256,23 @@ describe('Storage Tests', () => {
     assert.strictEqual(buf.toString(), 'body');
     const metadata = await storage.metadata('live/path');
     assert.strictEqual(metadata['x-source-last-modified'], 'Fri, 07 May 2021 18:03:19 GMT');
+  });
+
+  it('store returns errors correctly', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+    });
+    const memStorage = new Map();
+    memStorage.set('bloop', {}); // provide a bad bucket storage
+    storage.client.storage = memStorage;
+
+    const res = await storage.store('live/path', new Response('body', {
+      status: 200,
+    }));
+    assert.strictEqual(res.status, 404);
   });
 
   it('load existing item from read-only storage', async () => {
@@ -309,6 +350,50 @@ describe('Storage Tests', () => {
       'live/path', new Response('body', { status: 200 }),
     ));
   });
+
+  it('copy existing item', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+    });
+    const bucket = new Map();
+    bucket.set('preview/path', { Body: 'body' });
+    const memStorage = new Map();
+    memStorage.set('bloop', bucket);
+    storage.client.storage = memStorage;
+
+    await storage.copy('preview/path', 'live/path');
+    assert.notStrictEqual(bucket.get('live/path'), null);
+  });
+
+  it('copy non-existing item', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+    });
+    const bucket = new Map();
+    const memStorage = new Map();
+    memStorage.set('bloop', bucket);
+    storage.client.storage = memStorage;
+
+    const res = await storage.copy('preview/path', 'live/path');
+    assert.strictEqual(res.status, 404);
+  });
+
+  it('copy item to read-only storage', async () => {
+    const storage = new AWSStorageProxy({
+      AWS_S3_REGION: 'foo',
+      AWS_S3_ACCESS_KEY_ID: 'bar',
+      AWS_S3_SECRET_ACCESS_KEY: 'baz',
+      bucket: 'bloop',
+      readOnly: true,
+    });
+    await assert.rejects(() => storage.copy('preview/path', 'live/path'));
+  });
 });
 
 describe('Live Storage Tests', () => {
@@ -333,5 +418,15 @@ describe('Live Storage Tests', () => {
     });
     const { 'last-modified': lastModified } = await storage.metadata('live/express/create/advertisement/cyber-monday.md');
     assert.notStrictEqual(lastModified, null);
+  }).timeout(20000);
+  condit('Copy object in content bus', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+    const storage = new AWSStorage({
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+      bucket: 'h3b65dd98f8856eb616d04a58e04fe37077b50caa3174eae30f166dc4ff3f',
+    });
+    const result = await storage.copy('preview/express/create/advertisement/cyber-monday.m', 'live/express/create/advertisement/cyber-monday.m');
+    assert.notStrictEqual(result, null);
   }).timeout(20000);
 });
