@@ -36,6 +36,20 @@ function unknown(e, log) {
 }
 
 /**
+ * Parse a boolean given as either a string or a boolean.
+ *
+ * @param {any} value value to parse
+ * @param {boolean} defaultValue default value to use if value is unset
+ * @returns true, false or the default value
+ */
+function parseBoolean(value, defaultValue) {
+  if (value === 'false' || value === Boolean(false)) {
+    return false;
+  }
+  return value ? !!value : defaultValue;
+}
+
+/**
  * Fetches content from content-proxy and stores it in an S3 bucket.
  *
  * @param {Request} req request object
@@ -50,9 +64,11 @@ async function main(req, context) {
   } = env;
 
   const {
-    owner, repo, ref, path,
-    prefix = 'live', useCDN = true, useLastModified = false,
+    owner, repo, ref, path, prefix = 'live',
   } = context.data;
+
+  const useCDN = parseBoolean(context.data.useCDN, true);
+  const useLastModified = parseBoolean(context.data.useLastModified, false);
 
   if (!(owner && repo && ref && path)) {
     return new Response('owner, repo, ref, and path parameters are required', {

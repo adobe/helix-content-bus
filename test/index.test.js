@@ -123,6 +123,7 @@ describe('Index Tests', () => {
       repo: 'bar',
       ref: 'baz',
       path: '/outside/page.html',
+      useCDN: 'false',
     });
     assert.strictEqual(res.statusCode, 400);
     assert.match(res.headers['x-error'], /not mounted/);
