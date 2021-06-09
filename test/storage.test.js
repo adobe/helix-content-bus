@@ -123,7 +123,7 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
 
       run(storage) {
         const objs = storage.get(this._bucket);
-        if (!objs || !objs.set) {
+        if (!objs) {
           const e = new Error();
           e.$metadata = { httpStatusCode: 404 };
           throw e;
@@ -266,13 +266,19 @@ describe('Storage Tests', () => {
       bucket: 'bloop',
     });
     const memStorage = new Map();
-    memStorage.set('bloop', {}); // provide a bad bucket storage
+    memStorage.set('bloop', {
+      set: () => {
+        const e = new Error();
+        e.$metadata = { httpStatusCode: 403 };
+        throw e;
+      },
+    });
     storage.client.storage = memStorage;
 
     const res = await storage.store('live/path', new Response('body', {
       status: 200,
     }));
-    assert.strictEqual(res.status, 404);
+    assert.strictEqual(res.status, 403);
   });
 
   it('load existing item from read-only storage', async () => {
