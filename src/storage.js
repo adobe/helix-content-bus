@@ -276,18 +276,8 @@ class AWSStorage {
       }
     });
 
-    try {
-      await this.client.send(new PutObjectCommand(input));
-      log.info(`Object uploaded to: ${this.bucket}/${key}`);
-    } catch (e) {
-      log.error(`Unable to upload object to: ${this.bucket}/${key}`, e);
-      return new Response('', {
-        status: e.$metadata.httpStatusCode,
-      });
-    }
-    return new Response('', {
-      status: 200,
-    });
+    await this.client.send(new PutObjectCommand(input));
+    log.info(`Object uploaded to: ${this.bucket}/${key}`);
   }
 
   /**
@@ -311,18 +301,8 @@ class AWSStorage {
       Key: dest,
     };
 
-    try {
-      await this.client.send(new CopyObjectCommand(input));
-      log.info(`Object copied from ${src} to: ${this.bucket}/${dest}`);
-    } catch (e) {
-      log.error(`Unable to copy object from ${src} to ${this.bucket}/${dest}`, e);
-      return new Response('', {
-        status: e.$metadata.httpStatusCode,
-      });
-    }
-    return new Response('', {
-      status: 200,
-    });
+    await this.client.send(new CopyObjectCommand(input));
+    log.info(`Object copied from ${src} to: ${this.bucket}/${dest}`);
   }
 
   /**

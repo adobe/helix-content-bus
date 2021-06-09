@@ -11,214 +11,167 @@
  */
 
 /* eslint-env mocha */
-/* eslint-disable class-methods-use-this */
+/* eslint-disable class-methods-use-this, no-param-reassign */
 
 'use strict';
 
 process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 
 const assert = require('assert');
-const fs = require('fs');
-const { basename, resolve } = require('path');
-const proxyquire = require('proxyquire');
 
-const { Response } = require('@adobe/helix-fetch');
 const { condit } = require('@adobe/helix-testutils');
 
-const { main: universalMain } = require('../src/index.js');
-const { AWSStorage } = require('../src/storage.js');
-const { retrofit } = require('./utils.js');
+const { main } = require('../src/index.js');
+const { setupPolly, retrofit } = require('./utils.js');
 
-const SPEC_ROOT = resolve(__dirname, 'specs');
+// require('dotenv').config();
 
-class AWSStorageMock extends AWSStorage {
-  async load(key) {
-    if (key.startsWith('foo/bar/baz/')) {
-      const fsPath = resolve(SPEC_ROOT, basename(key));
-      if (fs.existsSync(fsPath)) {
-        return fs.readFileSync(fsPath, 'utf-8');
-      }
-    }
-    return null;
-  }
-
-  async metadata(key) {
-    if (key.startsWith('foo/bar/baz/') || key.startsWith('live/mnt/')) {
-      const fsPath = resolve(SPEC_ROOT, `${basename(key)}.json`);
-      if (fs.existsSync(fsPath)) {
-        return JSON.parse(fs.readFileSync(fsPath, 'utf-8'));
-      }
-    }
-    return null;
-  }
-
-  async store() {
-    return new Response('', {
-      status: 200,
-    });
-  }
-
-  async copy() {
-    return new Response('', {
-      status: 200,
-    });
-  }
-}
-
-function notModified(path, lastSeen) {
-  const metadataPath = resolve(SPEC_ROOT, `${basename(path)}.json`);
-  if (fs.existsSync(metadataPath)) {
-    const { 'last-modified': lastModified } = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
-    const lastSeenMs = Date.parse(lastSeen);
-    const lastModifiedMs = Date.parse(lastModified);
-    if (lastSeenMs >= lastModifiedMs) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const { main: proxyMain } = proxyquire('../src/index.js', {
-  './storage.js': {
-    AWSStorage: AWSStorageMock,
-  },
-  './content-proxy.js': {
-    contentProxy: async ({ path, options }) => {
-      if (options.lastModified && notModified(path, options.lastModified)) {
-        return new Response('Not modified', { status: 304 });
-      }
-      const fsPath = resolve(SPEC_ROOT, basename(path));
-      if (fs.existsSync(fsPath)) {
-        const body = fs.readFileSync(fsPath, 'utf-8');
-        return new Response(body, { status: 200 });
-      }
-      return new Response(`File not found: ${fsPath}`, { status: 404 });
-    },
-  },
-});
+const index = retrofit(main);
 
 describe('Index Tests', () => {
+  setupPolly({
+    recordIfMissing: false,
+    matchRequestsBy: {
+      method: true,
+      headers: false,
+      body: false,
+      order: false,
+      url: {
+        protocol: true,
+        username: false,
+        password: false,
+        hostname: true,
+        port: false,
+        pathname: true,
+        query: true,
+        hash: true,
+      },
+    },
+  });
+
+  beforeEach(function swallowSensitive() {
+    const { server } = this.polly;
+    server.any().on('beforePersist', (_, recording) => {
+      recording.request.headers = recording.request.headers.filter(({ name }) => name !== 'authorization');
+      delete recording.request.postData;
+    });
+  });
+
   it('returns 400 if path is missing', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
+    // const main = retrofit(proxyMain);
+    const res = await index({
+      owner: 'adobe',
+      repo: 'theblog',
+      ref: 'master',
     });
     assert.strictEqual(res.statusCode, 400);
-    assert.match(res.body, /required/);
+    assert.match(res.headers['x-error'], /required/);
   });
 
   it('returns 400 if fstab is missing', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'bay',
-      path: '/outside/page.html',
+    const res = await index({
+      owner: 'adobe',
+      repo: 'helix-index-files',
+      ref: 'main',
+      path: '/index.html',
     });
     assert.strictEqual(res.statusCode, 400);
     assert.match(res.headers['x-error'], /fstab.yaml not found/);
-  });
-  it('returns 400 if no mountpoint matches path', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/outside/page.html',
-      useCDN: 'false',
+  }).timeout(5000);
+
+  it('returns 400 if no mountpoint matches path', async function test() {
+    const fstab = `
+    mountpoints:
+      /outside: https://adobe.sharepoint.com/sites/TheBlog/Shared%20Documents/theblog
+    `;
+
+    const { server } = this.polly;
+    server
+      .get('https://helix-code-bus.s3.us-east-1.amazonaws.com/adobe/spark-website/main/fstab.yaml?x-id=GetObject')
+      .intercept((_, res) => res.status(200).send(fstab));
+
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
+      useLastModified: 'false',
     });
     assert.strictEqual(res.statusCode, 400);
     assert.match(res.headers['x-error'], /not mounted/);
-  });
+  }).timeout(5000);
 
-  it('returns 200 w/o schnickschnack with an existing path', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/example-post.md',
-    }, {
-      AWS_S3_REGION: 'foo',
-      AWS_S3_ACCESS_KEY_ID: 'bar',
-      AWS_S3_SECRET_ACCESS_KEY: 'baz',
-    }, true);
+  it('returns 200 without schnickschnack with an existing path', async () => {
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
+    });
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, '');
-  });
+  }).timeout(5000);
 
   it('returns 200 when publishing an existing item', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/example-post.md',
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
       action: 'publish',
-    }, {
-      AWS_S3_REGION: 'foo',
-      AWS_S3_ACCESS_KEY_ID: 'bar',
-      AWS_S3_SECRET_ACCESS_KEY: 'baz',
-    }, true);
+    }, {}, true);
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, '');
-  });
+  }).timeout(5000);
 
   it('returns 304 with an existing item that did not change', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/example-post.md',
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
+      prefix: 'preview',
       useLastModified: true,
-    }, {
-      AWS_S3_REGION: 'foo',
-      AWS_S3_ACCESS_KEY_ID: 'bar',
-      AWS_S3_SECRET_ACCESS_KEY: 'baz',
-    }, true);
+    }, {}, true);
     assert.strictEqual(res.statusCode, 304);
-  });
+  }).timeout(5000);
 
   it('returns 404 with a non-existing path', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/missing.md',
-      useLastModified: true,
-    }, {
-      AWS_S3_REGION: 'foo',
-      AWS_S3_ACCESS_KEY_ID: 'bar',
-      AWS_S3_SECRET_ACCESS_KEY: 'baz',
-    });
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/expres/missing.md',
+    }, {}, true);
     assert.strictEqual(res.statusCode, 404);
-  });
+  }).timeout(5000);
 
   it('returns 400 for a unknown action', async () => {
-    const main = retrofit(proxyMain);
-    const res = await main({
-      owner: 'foo',
-      repo: 'bar',
-      ref: 'baz',
-      path: '/mnt/missing.md',
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
       action: 'energize',
-    }, {
-      AWS_S3_REGION: 'foo',
-      AWS_S3_ACCESS_KEY_ID: 'bar',
-      AWS_S3_SECRET_ACCESS_KEY: 'baz',
     });
     assert.strictEqual(res.statusCode, 400);
-  });
+  }).timeout(5000);
+
+  it('returns 500 when copying a missing item', async () => {
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/expres/missing.md',
+      action: 'publish',
+    }, {}, true);
+    assert.strictEqual(res.statusCode, 500);
+  }).timeout(5000);
 });
 
 describe('Live Index Tests', () => {
   condit('Store theblog', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
-    const main = retrofit(universalMain);
-    const res = await main({
+    const res = await index({
       owner: 'adobe',
       repo: 'theblog',
       ref: 'master',
@@ -231,8 +184,7 @@ describe('Live Index Tests', () => {
     assert.strictEqual(res.statusCode, 200);
   }).timeout(20000);
   condit('Store spark-website', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
-    const main = retrofit(universalMain);
-    const res = await main({
+    const res = await index({
       owner: 'adobe',
       repo: 'spark-website',
       ref: 'main',
@@ -243,5 +195,19 @@ describe('Live Index Tests', () => {
       AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
     });
     assert.strictEqual(res.statusCode, 200);
+  }).timeout(20000);
+  condit('Publish spark-website', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.m',
+      action: 'publish',
+    }, {
+      AWS_S3_REGION: process.env.AWS_S3_REGION,
+      AWS_S3_ACCESS_KEY_ID: process.env.AWS_S3_ACCESS_KEY_ID,
+      AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
+    });
+    assert.strictEqual(res.statusCode, 500);
   }).timeout(20000);
 });
