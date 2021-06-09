@@ -136,6 +136,18 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 304);
   }).timeout(5000);
 
+  it('returns 200 with an item that wasn\'t available in S3', async () => {
+    const res = await index({
+      owner: 'adobe',
+      repo: 'spark-website',
+      ref: 'main',
+      path: '/express/create/advertisement/cyber-monday.md',
+      prefix: 'preview',
+      useLastModified: true,
+    }, {}, true);
+    assert.strictEqual(res.statusCode, 200);
+  }).timeout(5000);
+
   it('returns 404 with a non-existing path', async () => {
     const res = await index({
       owner: 'adobe',
