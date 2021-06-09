@@ -110,7 +110,7 @@ describe('Index Tests', () => {
     });
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, '');
-  }).timeout(5000);
+  }).timeout(10000);
 
   it('returns 200 when publishing an existing item', async () => {
     const res = await index({
