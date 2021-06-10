@@ -14,6 +14,7 @@
 
 /* eslint-disable no-param-reassign */
 const fetchAPI = require('@adobe/helix-fetch');
+const { cleanupHeaderValue } = require('@adobe/helix-shared-utils');
 const { Response } = require('@adobe/helix-universal');
 
 const { context, ALPN_HTTP1_1 } = fetchAPI;
@@ -70,7 +71,7 @@ function createErrorResponse({
   if (log) {
     const args = [message];
     if (e) {
-      args.push(e, e.stack);
+      args.push(e);
     }
     log.error(...args);
   }
@@ -78,7 +79,7 @@ function createErrorResponse({
   return new Response('', {
     status: (e && e.status) || status || 500,
     headers: {
-      'x-error': message,
+      'x-error': cleanupHeaderValue(message),
     },
   });
 }
