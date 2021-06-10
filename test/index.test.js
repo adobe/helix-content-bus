@@ -57,6 +57,12 @@ describe('Index Tests', () => {
     });
   });
 
+  const awsCredentials = {
+    AWS_S3_REGION: 'us-east-1',
+    AWS_S3_ACCESS_KEY_ID: 'foo',
+    AWS_S3_SECRET_ACCESS_KEY: 'bar',
+  };
+
   it('returns 400 if path is missing', async () => {
     // const main = retrofit(proxyMain);
     const res = await index({
@@ -74,7 +80,7 @@ describe('Index Tests', () => {
       repo: 'helix-index-files',
       ref: 'main',
       path: '/index.html',
-    });
+    }, awsCredentials);
     assert.strictEqual(res.statusCode, 400);
     assert.match(res.headers['x-error'], /fstab.yaml not found/);
   }).timeout(5000);
@@ -96,7 +102,7 @@ describe('Index Tests', () => {
       ref: 'main',
       path: '/express/create/advertisement/cyber-monday.md',
       useLastModified: 'false',
-    });
+    }, awsCredentials);
     assert.strictEqual(res.statusCode, 400);
     assert.match(res.headers['x-error'], /not mounted/);
   }).timeout(5000);
@@ -107,7 +113,7 @@ describe('Index Tests', () => {
       repo: 'spark-website',
       ref: 'main',
       path: '/express/create/advertisement/cyber-monday.md',
-    });
+    }, awsCredentials);
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, '');
   }).timeout(10000);
@@ -119,7 +125,7 @@ describe('Index Tests', () => {
       ref: 'main',
       path: '/express/create/advertisement/cyber-monday.md',
       action: 'publish',
-    }, {}, true);
+    }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, '');
   }).timeout(5000);
@@ -132,7 +138,7 @@ describe('Index Tests', () => {
       path: '/express/create/advertisement/cyber-monday.md',
       prefix: 'preview',
       useLastModified: true,
-    }, {}, true);
+    }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 304);
   }).timeout(5000);
 
@@ -144,7 +150,7 @@ describe('Index Tests', () => {
       path: '/express/create/advertisement/cyber-monday.md',
       prefix: 'preview',
       useLastModified: true,
-    }, {}, true);
+    }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 200);
   }).timeout(5000);
 
@@ -154,7 +160,7 @@ describe('Index Tests', () => {
       repo: 'spark-website',
       ref: 'main',
       path: '/expres/missing.md',
-    }, {}, true);
+    }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 404);
   }).timeout(5000);
 
@@ -165,7 +171,7 @@ describe('Index Tests', () => {
       ref: 'main',
       path: '/express/create/advertisement/cyber-monday.md',
       action: 'energize',
-    });
+    }, awsCredentials);
     assert.strictEqual(res.statusCode, 400);
   }).timeout(5000);
 
@@ -176,7 +182,7 @@ describe('Index Tests', () => {
       ref: 'main',
       path: '/expres/missing.md',
       action: 'publish',
-    }, {}, true);
+    }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 500);
   }).timeout(5000);
 });
