@@ -174,7 +174,7 @@ describe('Index Tests', () => {
     assert.strictEqual(res.statusCode, 400);
   }).timeout(5000);
 
-  it('returns 500 when copying a missing item', async () => {
+  it('returns 404 when copying a missing item', async () => {
     const res = await index({
       owner: 'adobe',
       repo: 'spark-website',
@@ -182,7 +182,7 @@ describe('Index Tests', () => {
       path: '/expres/missing.md',
       action: 'publish',
     }, awsCredentials, true);
-    assert.strictEqual(res.statusCode, 500);
+    assert.strictEqual(res.statusCode, 404);
   }).timeout(5000);
 });
 

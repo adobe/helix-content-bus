@@ -301,8 +301,18 @@ class AWSStorage {
       Key: dest,
     };
 
-    await this.client.send(new CopyObjectCommand(input));
-    log.info(`Object copied from ${src} to: ${this.bucket}/${dest}`);
+    try {
+      await this.client.send(new CopyObjectCommand(input));
+      log.info(`Object copied from ${src} to: ${this.bucket}/${dest}`);
+    } catch (e) {
+      /* istanbul ignore next */
+      if (e.Code !== 'NoSuchKey') {
+        throw e;
+      }
+      const e2 = new Error(`source does not exist: ${src}`);
+      e2.status = 404;
+      throw e2;
+    }
   }
 
   /**

@@ -74,6 +74,7 @@ function createErrorResponse({
     }
     log.error(...args);
   }
+  /* istanbul ignore next (default 500 status) */
   return new Response('', {
     status: (e && e.status) || status || 500,
     headers: {

@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "nodemon",
-    "test": " nyc mocha -i -g 'Post-Deploy'",
+    "test": " nyc mocha -i -g 'Post-Deploy' --exit",
     "test-ci": "nyc mocha -i -g 'Post-Deploy' --reporter xunit --reporter-options output=./junit/test-results.xml && codecov",
     "test-postdeploy": "mocha --reporter xunit --reporter-options output=./junit/test-results.xml -g 'Post-Deploy'",
     "lint": "eslint .",
