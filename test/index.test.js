@@ -64,7 +64,6 @@ describe('Index Tests', () => {
   };
 
   it('returns 400 if path is missing', async () => {
-    // const main = retrofit(proxyMain);
     const res = await index({
       owner: 'adobe',
       repo: 'theblog',
