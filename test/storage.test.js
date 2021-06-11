@@ -180,7 +180,7 @@ const { AWSStorage: AWSStorageProxy } = proxyquire('../src/storage.js', {
         }
         const obj = objs.get(src);
         if (!obj) {
-          const e = new Error();
+          const e = new Error('source does not exist');
           e.$metadata = { httpStatusCode: 404 };
           throw e;
         }
@@ -268,17 +268,17 @@ describe('Storage Tests', () => {
     const memStorage = new Map();
     memStorage.set('bloop', {
       set: () => {
-        const e = new Error();
+        const e = new Error('access denied');
         e.$metadata = { httpStatusCode: 403 };
         throw e;
       },
     });
     storage.client.storage = memStorage;
-
-    const res = await storage.store('live/path', new Response('body', {
-      status: 200,
-    }));
-    assert.strictEqual(res.status, 403);
+    await assert.rejects(async () => storage.store(
+      'live/path', new Response('body', {
+        status: 200,
+      }),
+    ), { message: 'access denied' });
   });
 
   it('load existing item from read-only storage', async () => {
@@ -386,8 +386,9 @@ describe('Storage Tests', () => {
     memStorage.set('bloop', bucket);
     storage.client.storage = memStorage;
 
-    const res = await storage.copy('preview/path', 'live/path');
-    assert.strictEqual(res.status, 404);
+    await assert.rejects(async () => storage.copy(
+      'preview/path', 'live/path',
+    ), { message: 'source does not exist' });
   });
 
   it('copy item to read-only storage', async () => {
@@ -398,7 +399,9 @@ describe('Storage Tests', () => {
       bucket: 'bloop',
       readOnly: true,
     });
-    await assert.rejects(() => storage.copy('preview/path', 'live/path'));
+    await assert.rejects(() => storage.copy(
+      'preview/path', 'live/path',
+    ));
   });
 });
 
@@ -432,7 +435,9 @@ describe('Live Storage Tests', () => {
       AWS_S3_SECRET_ACCESS_KEY: process.env.AWS_S3_SECRET_ACCESS_KEY,
       bucket: 'h3b65dd98f8856eb616d04a58e04fe37077b50caa3174eae30f166dc4ff3f',
     });
-    const result = await storage.copy('preview/express/create/advertisement/cyber-monday.m', 'live/express/create/advertisement/cyber-monday.m');
-    assert.notStrictEqual(result, null);
+    await assert.rejects(async () => storage.copy(
+      'preview/express/create/advertisement/cyber-monday.m',
+      'live/express/create/advertisement/cyber-monday.m',
+    ));
   }).timeout(20000);
 });

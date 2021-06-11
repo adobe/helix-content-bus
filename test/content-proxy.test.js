@@ -79,64 +79,58 @@ describe('Content Proxy Tests', () => {
     },
   };
 
-  [true, false].forEach((useCDN) => {
-    const display = useCDN ? 'CDN' : 'serverless';
-    it(`should return existing document (${display})`, async () => {
-      const params = {
-        owner: 'foo',
-        repo: 'bar',
-        ref: 'baz',
-        path: '/example-post.md',
-        mp: {
-          type: 'onedrive',
-          relPath: '/example-post.md',
-          url: 'https://adobe.sharepoint.com/mymount',
-        },
-        log: console,
-        options: { },
-        resolver,
-        useCDN,
-      };
-      const res = await contentProxy(params);
-      assert.strictEqual(res.status, 200);
-    });
+  it('should return existing document', async () => {
+    const params = {
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/example-post.md',
+      mp: {
+        type: 'onedrive',
+        relPath: '/example-post.md',
+        url: 'https://adobe.sharepoint.com/mymount',
+      },
+      log: console,
+      options: { },
+      resolver,
+    };
+    const res = await contentProxy(params);
+    assert.strictEqual(res.status, 200);
+  });
 
-    it(`should return 404 for missing document (${display})`, async () => {
-      const params = {
-        owner: 'foo',
-        repo: 'bar',
-        ref: 'baz',
-        path: '/missing.md',
-        mp: {
-          type: 'onedrive',
-          relPath: '/missing.md',
-          url: 'https://adobe.sharepoint.com/mymount',
-        },
-        log: console,
-        options: {
-          requestId: '1234',
-          lastModified: 'Fri, 07 May 2021 18:03:19 GMT',
-        },
-        resolver,
-        useCDN,
-      };
-      const res = await contentProxy(params);
-      assert.strictEqual(res.status, 404);
-    });
+  it('should return 404 for missing document', async () => {
+    const params = {
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/missing.md',
+      mp: {
+        type: 'onedrive',
+        relPath: '/missing.md',
+        url: 'https://adobe.sharepoint.com/mymount',
+      },
+      log: console,
+      options: {
+        requestId: '1234',
+        lastModified: 'Fri, 07 May 2021 18:03:19 GMT',
+      },
+      resolver,
+    };
+    const res = await contentProxy(params);
+    assert.strictEqual(res.status, 404);
+  });
 
-    it(`x-github-token is passed (${display})`, async () => {
-      const params = {
-        owner: 'foo',
-        repo: 'bar',
-        ref: 'baz',
-        path: '/private-post.md',
-        log: console,
-        options: { requestId: '1234', token: 'foobar' },
-        resolver,
-        useCDN,
-      };
-      const res = await contentProxy(params);
-      assert.strictEqual(res.status, 200);
-    });
+  it('x-github-token is passed', async () => {
+    const params = {
+      owner: 'foo',
+      repo: 'bar',
+      ref: 'baz',
+      path: '/private-post.md',
+      log: console,
+      options: { requestId: '1234', token: 'foobar' },
+      resolver,
+    };
+    const res = await contentProxy(params);
+    assert.strictEqual(res.status, 200);
   });
 });

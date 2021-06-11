@@ -12,8 +12,33 @@
 
 'use strict';
 
+const path = require('path');
 const querystring = require('querystring');
+const NodeHttpAdapter = require('@pollyjs/adapter-node-http');
+const FSPersister = require('@pollyjs/persister-fs');
+const { setupMocha } = require('@pollyjs/core');
 const { Request } = require('@adobe/helix-fetch');
+
+function setupPolly(opts) {
+  setupMocha({
+    logging: false,
+    recordFailedRequests: true,
+    recordIfMissing: false,
+    matchRequestsBy: {
+      headers: {
+        exclude: ['authorization', 'accept-encoding', 'user-agent', 'accept', 'connection', 'x-request-id'],
+      },
+    },
+    adapters: [NodeHttpAdapter],
+    persister: FSPersister,
+    persisterOptions: {
+      fs: {
+        recordingsDir: path.resolve(__dirname, 'fixtures'),
+      },
+    },
+    ...opts,
+  });
+}
 
 function retrofit(fn) {
   const resolver = {
@@ -43,4 +68,4 @@ function retrofit(fn) {
   };
 }
 
-module.exports = { retrofit };
+module.exports = { setupPolly, retrofit };

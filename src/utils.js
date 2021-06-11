@@ -14,6 +14,8 @@
 
 /* eslint-disable no-param-reassign */
 const fetchAPI = require('@adobe/helix-fetch');
+const { cleanupHeaderValue } = require('@adobe/helix-shared-utils');
+const { Response } = require('@adobe/helix-universal');
 
 const { context, ALPN_HTTP1_1 } = fetchAPI;
 const { fetch, timeoutSignal } = process.env.HELIX_FETCH_FORCE_HTTP1
@@ -59,7 +61,31 @@ function getFetchOptions(options) {
   return fetchopts;
 }
 
+/**
+ * Create an error response.
+ */
+function createErrorResponse({
+  e, msg, status, log,
+}) {
+  const message = (e && e.message) || msg;
+  if (log) {
+    const args = [message];
+    if (e) {
+      args.push(e);
+    }
+    log.error(...args);
+  }
+  /* istanbul ignore next (default 500 status) */
+  return new Response('', {
+    status: (e && e.status) || status || 500,
+    headers: {
+      'x-error': cleanupHeaderValue(message),
+    },
+  });
+}
+
 module.exports = {
   fetch,
   getFetchOptions,
+  createErrorResponse,
 };

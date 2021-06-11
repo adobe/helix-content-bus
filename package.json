@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "nodemon",
-    "test": " nyc mocha -i -g 'Post-Deploy'",
+    "test": " nyc mocha -i -g 'Post-Deploy' --exit",
     "test-ci": "nyc mocha -i -g 'Post-Deploy' --reporter xunit --reporter-options output=./junit/test-results.xml && codecov",
     "test-postdeploy": "mocha --reporter xunit --reporter-options output=./junit/test-results.xml -g 'Post-Deploy'",
     "lint": "eslint .",
@@ -50,6 +50,9 @@
     "@adobe/eslint-config-helix": "1.1.5",
     "@adobe/helix-deploy": "4.8.0",
     "@adobe/helix-testutils": "0.4.5",
+    "@pollyjs/adapter-node-http": "5.1.1",
+    "@pollyjs/core": "5.1.1",
+    "@pollyjs/persister-fs": "5.1.1",
     "@semantic-release/changelog": "5.0.1",
     "@semantic-release/exec": "5.0.0",
     "@semantic-release/git": "9.0.0",

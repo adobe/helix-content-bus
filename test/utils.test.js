@@ -9,7 +9,11 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 /* eslint-env mocha */
+
+'use strict';
+
 const assert = require('assert');
 const { getFetchOptions } = require('../src/utils');
 

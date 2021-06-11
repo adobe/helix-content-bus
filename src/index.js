@@ -24,16 +24,7 @@ const { Response } = require('@adobe/helix-universal');
 
 const { contentProxy } = require('./content-proxy.js');
 const { AWSStorage } = require('./storage.js');
-
-/* istanbul ignore next */
-function unknown(e, log) {
-  const stack = (e && e.stack) || 'no stack';
-  log.error('Unhandled error', e, stack);
-
-  const body = (e && e.message) || 'no message';
-  const status = (e && e.status) || 500;
-  return new Response(body, { status });
-}
+const { createErrorResponse } = require('./utils.js');
 
 /**
  * Parse a boolean given as either a string or a boolean.
@@ -67,12 +58,12 @@ async function main(req, context) {
     owner, repo, ref, path, prefix = 'live', action = 'update',
   } = context.data;
 
-  const useCDN = parseBoolean(context.data.useCDN, true);
   const useLastModified = parseBoolean(context.data.useLastModified, false);
 
   if (!(owner && repo && ref && path)) {
-    return new Response('owner, repo, ref, and path parameters are required', {
+    return createErrorResponse({
       status: 400,
+      msg: 'owner, repo, ref, and path parameters are required',
     });
   }
 
@@ -90,15 +81,16 @@ async function main(req, context) {
     });
     const buffer = await codeStorage.load(`${owner}/${repo}/${ref}/fstab.yaml`);
     if (!buffer) {
-      log.error(`${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`);
-      return new Response('', {
+      return createErrorResponse({
+        log,
         status: 400,
-        headers: {
-          'x-error': `${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`,
-        },
+        msg: `${owner}/${repo}/${ref}/fstab.yaml not found in bucket 'helix-code-bus'`,
       });
     }
     fstab = await new MountConfig().withSource(buffer.toString()).init();
+  } catch (e) {
+    /* istanbul ignore next */
+    return createErrorResponse({ e, log });
   } finally {
     /* istanbul ignore else */
     if (codeStorage) {
@@ -108,12 +100,10 @@ async function main(req, context) {
 
   const mp = fstab.match(path);
   if (!mp) {
-    log.error(`path specified is not mounted in fstab.yaml: ${path}`);
-    return new Response('', {
+    return createErrorResponse({
+      log,
       status: 400,
-      headers: {
-        'x-error': `path specified is not mounted in fstab.yaml: ${path}`,
-      },
+      msg: `path specified is not mounted in fstab.yaml: ${path}`,
     });
   }
 
@@ -151,22 +141,25 @@ async function main(req, context) {
       if (useLastModified) {
         const metadata = await contentStorage.metadata(key);
         if (metadata) {
-          options.lastModified = metadata['last-modified'];
+          options.lastModified = metadata['x-source-last-modified'];
         }
       }
       const res = await contentProxy({
-        owner, repo, ref, path, mp, log, options, resolver, useCDN,
+        owner, repo, ref, path, mp, log, options, resolver,
       });
       if (!res.ok) {
         return res;
       }
-      return await contentStorage.store(key, res);
+      await contentStorage.store(key, res);
+      return new Response('', { status: 200 });
     }
     if (action === 'publish') {
-      return await contentStorage.copy(`preview${path}`, `live${path}`);
+      await contentStorage.copy(`preview${path}`, `live${path}`);
+      return new Response('', { status: 200 });
     }
-    return new Response(`Action unknown: ${action}`, {
+    return createErrorResponse({
       status: 400,
+      msg: `Action unknown: ${action}`,
     });
   } catch (e) {
     /* istanbul ignore next */
@@ -185,7 +178,7 @@ async function main(req, context) {
       }
     }
     /* istanbul ignore next */
-    return unknown(e, log);
+    return createErrorResponse({ e, log });
   } finally {
     /* istanbul ignore else */
     if (contentStorage) {

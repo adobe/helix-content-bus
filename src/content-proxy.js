@@ -37,34 +37,31 @@ const PASSTHROUGH_HEADERS = [
  * @param {object}   opts.log a Helix-Log instance
  * @param {object}   opts.options Helix Fetch options
  * @param {Resolver} opts.resolver Version lock helper
- * @param {boolean}  opts.useCDN whether to use CDN
  *
  * @returns {string} URL to fetch content from
  */
 function createURL(opts) {
   const {
-    owner, repo, ref, path, mp, options, resolver, useCDN,
+    owner, repo, ref, path, mp, options, resolver,
   } = opts;
-  if (!useCDN) {
-    const url = resolver.createURL({
-      package: 'helix-services',
-      name: 'content-proxy',
-      version: 'v2',
-    });
-    url.searchParams.append('owner', owner);
-    url.searchParams.append('repo', repo);
-    url.searchParams.append('ref', ref);
-    url.searchParams.append('path', path);
 
-    if (mp) {
-      url.searchParams.append('mpType', mp.type);
-      url.searchParams.append('mpRelPath', mp.relPath);
-      url.searchParams.append('mpURL', mp.url);
-    }
-    url.searchParams.append('rid', options.requestId);
-    return url.href;
+  const url = resolver.createURL({
+    package: 'helix-services',
+    name: 'content-proxy',
+    version: 'v2',
+  });
+  url.searchParams.append('owner', owner);
+  url.searchParams.append('repo', repo);
+  url.searchParams.append('ref', ref);
+  url.searchParams.append('path', path);
+
+  if (mp) {
+    url.searchParams.append('mpType', mp.type);
+    url.searchParams.append('mpRelPath', mp.relPath);
+    url.searchParams.append('mpURL', mp.url);
   }
-  return `https://${ref}--${repo}--${owner}.hlx.page${path}`;
+  url.searchParams.append('rid', options.requestId);
+  return url.href;
 }
 
 /**
