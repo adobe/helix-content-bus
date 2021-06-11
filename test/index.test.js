@@ -186,7 +186,7 @@ describe('Index Tests', () => {
   }).timeout(5000);
 });
 
-describe('Live Index Tests', () => {
+describe.skip('Live Index Tests', () => {
   condit('Store theblog', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
     const res = await index({
       owner: 'adobe',

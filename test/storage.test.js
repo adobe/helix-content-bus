@@ -405,7 +405,7 @@ describe('Storage Tests', () => {
   });
 });
 
-describe('Live Storage Tests', () => {
+describe.skip('Live Storage Tests', () => {
   condit('Read from code bus', condit.hasenvs(['AWS_S3_REGION', 'AWS_S3_ACCESS_KEY_ID', 'AWS_S3_SECRET_ACCESS_KEY']), async () => {
     const storage = new AWSStorage({
       AWS_S3_REGION: process.env.AWS_S3_REGION,
