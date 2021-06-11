@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/adobe/helix-content-bus#readme",
   "dependencies": {
-    "@adobe/helix-fetch": "2.2.1",
+    "@adobe/helix-fetch": "2.3.0",
     "@adobe/helix-shared-body-data": "1.0.8",
     "@adobe/helix-shared-config": "1.1.4",
     "@adobe/helix-shared-utils": "1.0.3",
