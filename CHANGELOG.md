@@ -1,3 +1,17 @@
+## [1.3.2](https://github.com/adobe/helix-content-bus/compare/v1.3.1...v1.3.2) (2021-06-13)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#71](https://github.com/adobe/helix-content-bus/issues/71)) ([81d38a7](https://github.com/adobe/helix-content-bus/commit/81d38a71bdd6cb34a424c5a9142b6ae0fb82bbd8))
+
+## [1.3.1](https://github.com/adobe/helix-content-bus/compare/v1.3.0...v1.3.1) (2021-06-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-fetch to v2.3.0 ([#68](https://github.com/adobe/helix-content-bus/issues/68)) ([b5599ee](https://github.com/adobe/helix-content-bus/commit/b5599ee0d5eb1f128eda2e4b37eb5062263ec731))
+
 # [1.3.0](https://github.com/adobe/helix-content-bus/compare/v1.2.5...v1.3.0) (2021-06-08)
 
 
