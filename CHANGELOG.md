@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/adobe/helix-content-bus/compare/v1.3.2...v1.3.3) (2021-06-14)
+
+
+### Bug Fixes
+
+* use latest @adobe/helix-fetch and timeoutSignal.clear ([24fe489](https://github.com/adobe/helix-content-bus/commit/24fe4897a145e84896a733cab5ce136ffed6a842))
+
 ## [1.3.2](https://github.com/adobe/helix-content-bus/compare/v1.3.1...v1.3.2) (2021-06-13)
 
 
