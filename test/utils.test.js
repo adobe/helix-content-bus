@@ -25,6 +25,9 @@ describe('Utils unit tests', () => {
       fetchTimeout: 1000,
       requestId: '1234',
     });
+    if (options.signal) {
+      options.signal.clear();
+    }
     delete options.signal;
     assert.deepStrictEqual(options, {
       cache: 'no-store',

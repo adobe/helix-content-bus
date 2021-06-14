@@ -87,29 +87,37 @@ async function contentProxy(opts) {
   const url = createURL(opts);
   log.info(`Fetching content from: ${url}`);
 
-  const resp = await fetch(url, getFetchOptions(options));
-  const body = await resp.buffer();
-  if (resp.ok) {
-    const headers = {};
-    PASSTHROUGH_HEADERS.forEach((name) => {
-      const value = resp.headers.get(name);
-      if (value) {
-        headers[name] = value;
-      }
-    });
+  const fetchopts = getFetchOptions(options);
+
+  try {
+    const resp = await fetch(url, fetchopts);
+    const body = await resp.buffer();
+    if (resp.ok) {
+      const headers = {};
+      PASSTHROUGH_HEADERS.forEach((name) => {
+        const value = resp.headers.get(name);
+        if (value) {
+          headers[name] = value;
+        }
+      });
+      return new Response(body, {
+        status: 200,
+        headers,
+      });
+    }
+    log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url} (${resp.status}): ${resp.headers.get('x-error')}`);
     return new Response(body, {
-      status: 200,
-      headers,
+      status: propagateStatusCode(resp.status),
+      headers: {
+        'x-error': resp.headers.get('x-error'),
+        'cache-control': 'private, no-cache',
+      },
     });
+  } finally {
+    if (fetchopts.signal) {
+      fetchopts.signal.clear();
+    }
   }
-  log[logLevelForStatusCode(resp.status)](`Unable to fetch ${url} (${resp.status}): ${resp.headers.get('x-error')}`);
-  return new Response(body, {
-    status: propagateStatusCode(resp.status),
-    headers: {
-      'x-error': resp.headers.get('x-error'),
-      'cache-control': 'private, no-cache',
-    },
-  });
 }
 
 module.exports = {
