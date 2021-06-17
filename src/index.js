@@ -131,7 +131,10 @@ async function main(req, context) {
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
       bucket,
-      tags: [{ Key: 'mountpoint', Value: escapeTagValue(mp.url) }],
+      tags: [
+        { Key: 'mountpoint', Value: escapeTagValue(mp.url) },
+        { Key: 'original-repository', Value: `${owner}/${repo}` },
+      ],
       log,
     });
 
