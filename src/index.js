@@ -24,7 +24,7 @@ const { Response } = require('@adobe/helix-universal');
 
 const { contentProxy } = require('./content-proxy.js');
 const { AWSStorage } = require('./storage.js');
-const { createErrorResponse } = require('./utils.js');
+const { createErrorResponse, escapeTagValue } = require('./utils.js');
 
 /**
  * Parse a boolean given as either a string or a boolean.
@@ -131,7 +131,7 @@ async function main(req, context) {
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
       bucket,
-      tags: [{ Key: 'mountpoint', Value: decodeURI(mp.url) }],
+      tags: [{ Key: 'mountpoint', Value: escapeTagValue(mp.url) }],
       log,
     });
 

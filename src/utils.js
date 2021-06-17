@@ -84,8 +84,32 @@ function createErrorResponse({
   });
 }
 
+/**
+ * Escape tag value, so it's acceptable for AWS S3.
+ *
+ * @param value {string} value to escape
+ *
+ * @returns escaped tag value
+ *
+ * The allowed characters across services are: letters, numbers, and spaces representable in UTF-8,
+ * and the following characters: + - = . _ : / @.
+ */
+function escapeTagValue(value) {
+  let escaped;
+  if (value.match(/https:\/\/.*\.sharepoint\.com/)) {
+    escaped = decodeURI(value);
+  } else if (value.match(/https:\/\/drive.google.com/)) {
+    const query = value.indexOf('?');
+    escaped = value.substring(0, query !== -1 ? query : value.length);
+  } else {
+    escaped = value.replace(/[^A-Za-z0-9 +-=._:/@]/g, '_');
+  }
+  return escaped;
+}
+
 module.exports = {
   fetch,
   getFetchOptions,
   createErrorResponse,
+  escapeTagValue,
 };

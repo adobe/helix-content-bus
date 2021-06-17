@@ -15,7 +15,7 @@
 'use strict';
 
 const assert = require('assert');
-const { getFetchOptions } = require('../src/utils');
+const { getFetchOptions, escapeTagValue } = require('../src/utils');
 
 describe('Utils unit tests', () => {
   it('Creates fetch options correctly', () => {
@@ -36,5 +36,19 @@ describe('Utils unit tests', () => {
         'x-request-id': '1234',
       },
     });
+  });
+
+  it('Escape tag value', () => {
+    let escaped = escapeTagValue('https://example.sharepoint.com/sites/Site/Shared%20Documents/project');
+    assert.strictEqual(escaped, 'https://example.sharepoint.com/sites/Site/Shared Documents/project');
+
+    escaped = escapeTagValue('https://drive.google.com/drive/folders/id?usp=sharing');
+    assert.strictEqual(escaped, 'https://drive.google.com/drive/folders/id');
+
+    escaped = escapeTagValue('https://drive.google.com/drive/folders/id2');
+    assert.strictEqual(escaped, 'https://drive.google.com/drive/folders/id2');
+
+    escaped = escapeTagValue('!@#$%^&*()_+-=[]{};\':"\\|,.<>/?');
+    assert.strictEqual(escaped, '_@_________+-=____;_:___,.<_/_');
   });
 });
