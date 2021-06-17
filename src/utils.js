@@ -102,7 +102,7 @@ function escapeTagValue(value) {
     const query = value.indexOf('?');
     escaped = value.substring(0, query !== -1 ? query : value.length);
   } else {
-    escaped = value.replace(/[^A-Za-z0-9 +-=._:/@]/g, '_');
+    escaped = value.replace(/[^A-Za-z0-9- +=._:/@]/g, '_');
   }
   return escaped;
 }

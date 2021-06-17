@@ -49,6 +49,6 @@ describe('Utils unit tests', () => {
     assert.strictEqual(escaped, 'https://drive.google.com/drive/folders/id2');
 
     escaped = escapeTagValue('!@#$%^&*()_+-=[]{};\':"\\|,.<>/?');
-    assert.strictEqual(escaped, '_@_________+-=____;_:___,.<_/_');
+    assert.strictEqual(escaped, '_@_________+-=______:____.__/_');
   });
 });
