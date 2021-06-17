@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/adobe/helix-content-bus/compare/v1.3.3...v1.3.4) (2021-06-17)
+
+
+### Bug Fixes
+
+* tag value should be escaped ([#73](https://github.com/adobe/helix-content-bus/issues/73)) ([9ff130c](https://github.com/adobe/helix-content-bus/commit/9ff130c23d76415124e9b2dd1098be696bf3fec0))
+
 ## [1.3.3](https://github.com/adobe/helix-content-bus/compare/v1.3.2...v1.3.3) (2021-06-14)
 
 
