@@ -1,3 +1,10 @@
+## [1.3.6](https://github.com/adobe/helix-content-bus/compare/v1.3.5...v1.3.6) (2021-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-shared-config to v1.1.7 ([#78](https://github.com/adobe/helix-content-bus/issues/78)) ([650e449](https://github.com/adobe/helix-content-bus/commit/650e449e304ef68193d3fb684fc9c2e2f04704ff))
+
 ## [1.3.5](https://github.com/adobe/helix-content-bus/compare/v1.3.4...v1.3.5) (2021-07-05)
 
 
