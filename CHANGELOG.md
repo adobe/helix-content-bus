@@ -1,3 +1,10 @@
+## [1.3.5](https://github.com/adobe/helix-content-bus/compare/v1.3.4...v1.3.5) (2021-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#74](https://github.com/adobe/helix-content-bus/issues/74)) ([b4f246b](https://github.com/adobe/helix-content-bus/commit/b4f246b925b975af3bde579cebb8cfbef5e0e9d9))
+
 ## [1.3.4](https://github.com/adobe/helix-content-bus/compare/v1.3.3...v1.3.4) (2021-06-17)
 
 
