@@ -1,6 +1,6 @@
 {
   "name": "@adobe/helix-content-bus",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "private": true,
   "description": "Helix Content Bus",
   "main": "src/index.js",
