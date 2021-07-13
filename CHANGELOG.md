@@ -1,3 +1,10 @@
+## [1.3.11](https://github.com/adobe/helix-content-bus/compare/v1.3.10...v1.3.11) (2021-07-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v1.6.5 ([#83](https://github.com/adobe/helix-content-bus/issues/83)) ([370c0ea](https://github.com/adobe/helix-content-bus/commit/370c0ea9f59f3d2b9ca6e740f5102e2063068987))
+
 ## [1.3.10](https://github.com/adobe/helix-content-bus/compare/v1.3.9...v1.3.10) (2021-07-13)
 
 
