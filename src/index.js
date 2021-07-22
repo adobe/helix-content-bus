@@ -24,7 +24,7 @@ const { Response } = require('@adobe/helix-universal');
 
 const { contentProxy } = require('./content-proxy.js');
 const { AWSStorage } = require('./storage.js');
-const { createErrorResponse, escapeTagValue } = require('./utils.js');
+const { createErrorResponse } = require('./utils.js');
 
 /**
  * Parse a boolean given as either a string or a boolean.
@@ -124,22 +124,18 @@ async function main(req, context) {
       .createHash('sha256')
       .update(mp.url)
       .digest('hex');
-    const bucket = `h3${sha256.substr(0, 59)}`;
+    const contentBusId = `${sha256.substr(0, 59)}`;
 
     contentStorage = new AWSStorage({
       AWS_S3_REGION,
       AWS_S3_ACCESS_KEY_ID,
       AWS_S3_SECRET_ACCESS_KEY,
-      bucket,
-      tags: [
-        { Key: 'mountpoint', Value: escapeTagValue(mp.url) },
-        { Key: 'original-repository', Value: `${owner}/${repo}` },
-      ],
+      bucket: 'helix-content-bus',
       log,
     });
 
     if (action === 'update') {
-      const key = `${prefix}${path}`;
+      const key = `${contentBusId}/${prefix}${path}`;
 
       if (useLastModified) {
         const metadata = await contentStorage.metadata(key);
@@ -154,12 +150,27 @@ async function main(req, context) {
         return res;
       }
       await contentStorage.store(key, res);
+
+      // set container info if not present
+      const infoKey = `${contentBusId}/.hlx.json`;
+      if (!await contentStorage.load(infoKey)) {
+        const meta = {
+          mountpoint: mp.url,
+          'original-repository': `${owner}/${repo}`,
+        };
+        await contentStorage.storeData(infoKey, Buffer.from(JSON.stringify(meta, null, 2)), 'application/json', meta);
+
+        // create marker file so that the root folder is easy to find.
+        await contentStorage.storeData(`${contentBusId}--${owner}--${repo}`, '', 'text/plain', meta);
+      }
       return new Response('', { status: 200 });
     }
+
     if (action === 'publish') {
-      await contentStorage.copy(`preview${path}`, `live${path}`);
+      await contentStorage.copy(`${contentBusId}/preview${path}`, `${contentBusId}/live${path}`);
       return new Response('', { status: 200 });
     }
+
     return createErrorResponse({
       status: 400,
       msg: `Action unknown: ${action}`,

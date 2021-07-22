@@ -17,13 +17,8 @@ const zlib = require('zlib');
 
 const {
   S3Client,
-  CreateBucketCommand,
-  GetBucketTaggingCommand,
   GetObjectCommand,
-  HeadBucketCommand,
-  PutBucketTaggingCommand,
   PutObjectCommand,
-  PutPublicAccessBlockCommand,
   HeadObjectCommand,
   CopyObjectCommand,
 } = require('@aws-sdk/client-s3');
@@ -32,11 +27,6 @@ const { Response } = require('@adobe/helix-fetch');
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);
-
-/**
- * Template bucket we use for copying the tags.
- */
-const TEMPLATE_BUCKET = 'helix-content-bus-template';
 
 /**
  * Header names that AWS considers system defined.
@@ -106,76 +96,6 @@ class AWSStorage {
     this._log = log;
   }
 
-  async _bucketExists() {
-    try {
-      await this.client.send(new HeadBucketCommand({
-        Bucket: this._bucket,
-      }));
-      return true;
-    } catch (e) {
-      /* istanbul ignore next */
-      if (e.$metadata.httpStatusCode !== 404) {
-        throw e;
-      }
-      return false;
-    }
-  }
-
-  async _bucketCreate() {
-    const { log } = this;
-    let tags;
-
-    try {
-      const result = await this.client.send(new GetBucketTaggingCommand({
-        Bucket: TEMPLATE_BUCKET,
-      }));
-      tags = result.TagSet;
-    } catch (e) {
-      log.error(`Unable to obtain default tags from template bucket: ${this.bucket}`, e);
-      throw e;
-    }
-
-    // Create the new bucket
-    await this.client.send(new CreateBucketCommand({
-      Bucket: this._bucket,
-    }));
-
-    // Block public access
-    await this.client.send(new PutPublicAccessBlockCommand({
-      Bucket: this._bucket,
-      PublicAccessBlockConfiguration: {
-        BlockPublicAcls: true,
-        IgnorePublicAcls: true,
-        BlockPublicPolicy: true,
-        RestrictPublicBuckets: true,
-      },
-    }));
-
-    // Put required tags
-    tags.push(...this._tags);
-    await this.client.send(new PutBucketTaggingCommand({
-      Bucket: this._bucket,
-      Tagging: {
-        TagSet: tags,
-      },
-    }));
-    log.info(`Bucket created: ${this.bucket}`);
-  }
-
-  async _init() {
-    if (this._initialized) {
-      return;
-    }
-
-    if (!this._readOnly) {
-      const exists = await this._bucketExists();
-      if (!exists) {
-        await this._bucketCreate();
-      }
-    }
-    this._initialized = true;
-  }
-
   /**
    * Return an object contents.
    *
@@ -183,8 +103,6 @@ class AWSStorage {
    * @returns object contents as a Buffer or null
    */
   async load(key) {
-    await this._init();
-
     const { log } = this;
 
     const input = {
@@ -217,8 +135,6 @@ class AWSStorage {
    * @returns object metadata or null
    */
   async metadata(key) {
-    await this._init();
-
     const { log } = this;
 
     const input = {
@@ -250,7 +166,6 @@ class AWSStorage {
     if (this._readOnly) {
       throw new Error(`Storage is read-only: ${this._bucket}`);
     }
-    await this._init();
 
     const { log } = this;
     const body = await res.buffer();
@@ -281,6 +196,32 @@ class AWSStorage {
   }
 
   /**
+   * Store an object contents, along with headers.
+   *
+   * @param {string} key object key
+   * @param {Buffer} data data to store
+   * @param {string} [contentType] content type. defaults to 'application/octet-stream'
+   * @param {object} [meta] metadata to store with the object. defaults to '{}'
+   * @returns result obtained from S3
+   */
+  async storeData(key, data, contentType = 'application/octet-stream', meta = {}) {
+    if (this._readOnly) {
+      throw new Error(`Storage is read-only: ${this._bucket}`);
+    }
+
+    const input = {
+      Body: data,
+      Bucket: this.bucket,
+      ContentType: contentType,
+      Metadata: meta,
+      Key: key,
+    };
+
+    await this.client.send(new PutObjectCommand(input));
+    this.log.info(`Object uploaded to: ${this.bucket}/${key}`);
+  }
+
+  /**
    * Copy an object in the same bucket.
    *
    * @param {string} src source key
@@ -291,7 +232,6 @@ class AWSStorage {
     if (this._readOnly) {
       throw new Error(`Storage is read-only: ${this._bucket}`);
     }
-    await this._init();
 
     const { log } = this;
 

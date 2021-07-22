@@ -30,7 +30,7 @@ const index = retrofit(main);
 
 describe('Index Tests', () => {
   setupPolly({
-    recordIfMissing: false,
+    recordIfMissing: true,
     matchRequestsBy: {
       method: true,
       headers: false,
@@ -73,12 +73,16 @@ describe('Index Tests', () => {
     assert.match(res.headers['x-error'], /required/);
   });
 
-  it('returns 400 if fstab is missing', async () => {
+  it('returns 400 if fstab is missing', async function test() {
+    const { server } = this.polly;
+    server
+      .get('https://helix-code-bus.s3.us-east-1.amazonaws.com/tripodsan/helix-test/main/fstab.yaml?x-id=GetObject')
+      .intercept((_, res) => res.status(404));
     const res = await index({
-      owner: 'adobe',
-      repo: 'helix-index-files',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/index.html',
+      path: '/word2md-unit-tests/homepage.md',
     }, awsCredentials);
     assert.strictEqual(res.statusCode, 400);
     assert.match(res.headers['x-error'], /fstab.yaml not found/);
@@ -92,14 +96,14 @@ describe('Index Tests', () => {
 
     const { server } = this.polly;
     server
-      .get('https://helix-code-bus.s3.us-east-1.amazonaws.com/adobe/spark-website/main/fstab.yaml?x-id=GetObject')
+      .get('https://helix-code-bus.s3.us-east-1.amazonaws.com/tripodsan/helix-test/main/fstab.yaml?x-id=GetObject')
       .intercept((_, res) => res.status(200).send(fstab));
 
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/express/create/advertisement/cyber-monday.md',
+      path: '/word2md-unit-tests/homepage.md',
       useLastModified: 'false',
     }, awsCredentials);
     assert.strictEqual(res.statusCode, 400);
@@ -108,10 +112,26 @@ describe('Index Tests', () => {
 
   it('returns 200 without schnickschnack with an existing path', async () => {
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/express/create/advertisement/cyber-monday.md',
+      path: '/word2md-unit-tests/homepage.md',
+    }, awsCredentials);
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, '');
+  }).timeout(10000);
+
+  it('creates marker files if missing', async function test() {
+    const { server } = this.polly;
+    server
+      .get('https://helix-content-bus.s3.us-east-1.amazonaws.com/d4b1d4ea6d84b0229bce7cf6806b0bb3470489ab8205a13f75cfe518fa7/.hlx.json?x-id=GetObject')
+      .intercept((_, res) => res.status(404));
+
+    const res = await index({
+      owner: 'tripodsan',
+      repo: 'helix-test',
+      ref: 'main',
+      path: '/word2md-unit-tests/homepage.md',
     }, awsCredentials);
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, '');
@@ -119,10 +139,10 @@ describe('Index Tests', () => {
 
   it('returns 200 when publishing an existing item', async () => {
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/express/create/advertisement/cyber-monday.md',
+      path: '/word2md-unit-tests/homepage.md',
       action: 'publish',
     }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 200);
@@ -131,22 +151,27 @@ describe('Index Tests', () => {
 
   it('returns 304 with an existing item that did not change', async () => {
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/express/create/advertisement/cyber-monday.md',
+      path: '/word2md-unit-tests/homepage.md',
       prefix: 'preview',
       useLastModified: true,
     }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 304);
   }).timeout(5000);
 
-  it('returns 200 with an item that wasn\'t available in S3', async () => {
+  it('returns 200 with an item that wasn\'t available in S3', async function test() {
+    const { server } = this.polly;
+    server
+      .head('https://helix-content-bus.s3.us-east-1.amazonaws.com/d4b1d4ea6d84b0229bce7cf6806b0bb3470489ab8205a13f75cfe518fa7/preview/word2md-unit-tests/homepage.md')
+      .intercept((_, res) => res.status(404));
+
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/express/create/advertisement/cyber-monday.md',
+      path: '/word2md-unit-tests/homepage.md',
       prefix: 'preview',
       useLastModified: true,
     }, awsCredentials, true);
@@ -155,20 +180,20 @@ describe('Index Tests', () => {
 
   it('returns 404 with a non-existing path', async () => {
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/expres/missing.md',
+      path: '/non-existing/homepage.md',
     }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 404);
   }).timeout(5000);
 
   it('returns 400 for a unknown action', async () => {
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/express/create/advertisement/cyber-monday.md',
+      path: '/word2md-unit-tests/homepage.md',
       action: 'energize',
     }, awsCredentials);
     assert.strictEqual(res.statusCode, 400);
@@ -176,10 +201,10 @@ describe('Index Tests', () => {
 
   it('returns 404 when copying a missing item', async () => {
     const res = await index({
-      owner: 'adobe',
-      repo: 'spark-website',
+      owner: 'tripodsan',
+      repo: 'helix-test',
       ref: 'main',
-      path: '/expres/missing.md',
+      path: '/nonexisting/homepage.md',
       action: 'publish',
     }, awsCredentials, true);
     assert.strictEqual(res.statusCode, 404);

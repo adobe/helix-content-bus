@@ -194,11 +194,13 @@ describe('Storage Tests', () => {
   it('constructor throws if required parameters are missing', async () => {
     assert.throws(() => new AWSStorage({}), /required/);
   });
+
   it('constructor succeeds if required parameters are there', async () => {
     assert.doesNotThrow(() => new AWSStorage({
       bucket: 'bloop',
     }));
   });
+
   it('store item to non existing bucket with missing template bucket', async () => {
     const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
@@ -212,26 +214,22 @@ describe('Storage Tests', () => {
       'live/path', new Response('body', { status: 200 }),
     ));
   });
-  it('store 2 items to non existing bucket', async () => {
+
+  it('store-data item fails to read-only bucket', async () => {
     const storage = new AWSStorageProxy({
       AWS_S3_REGION: 'foo',
       AWS_S3_ACCESS_KEY_ID: 'bar',
       AWS_S3_SECRET_ACCESS_KEY: 'baz',
       bucket: 'bloop',
+      readOnly: true,
     });
     const memStorage = new Map();
-    memStorage.set('helix-content-bus-template', []);
+    memStorage.set('bloop', new Map());
     storage.client.storage = memStorage;
 
-    await assert.doesNotReject(() => storage.store(
-      'live/path', new Response('body', {
-        status: 200,
-        headers: { 'last-modified': 'Tue, 20 Apr 2021 23:51:03 GMT' },
-      }),
-    ));
-    await assert.doesNotReject(() => storage.store(
-      'live/path2', new Response('body', { status: 200 }),
-    ));
+    await assert.rejects(() => storage.storeData(
+      'live/path',
+    ), Error('Storage is read-only: bloop'));
   });
 
   it('store item to existing bucket', async () => {
