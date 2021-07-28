@@ -1,3 +1,10 @@
+## [1.3.17](https://github.com/adobe/helix-content-bus/compare/v1.3.16...v1.3.17) (2021-07-28)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-status to v9.2.0 ([#93](https://github.com/adobe/helix-content-bus/issues/93)) ([fe603f9](https://github.com/adobe/helix-content-bus/commit/fe603f9ff226c26a89fd721311e3a20e7d2675d9))
+
 ## [1.3.16](https://github.com/adobe/helix-content-bus/compare/v1.3.15...v1.3.16) (2021-07-28)
 
 
