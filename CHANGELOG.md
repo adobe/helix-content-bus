@@ -1,3 +1,17 @@
+# [2.0.0](https://github.com/adobe/helix-content-bus/compare/v1.3.18...v2.0.0) (2021-08-04)
+
+
+### Bug Fixes
+
+* use single bucket for content-bus ([be6e183](https://github.com/adobe/helix-content-bus/commit/be6e1830a4c39a0af551d232a617606261c411a2)), closes [#88](https://github.com/adobe/helix-content-bus/issues/88)
+
+
+### BREAKING CHANGES
+
+* content is no longer stored in individual buckets but
+  inside a common helix-content-bus bucket.
+  the content-bus id prefix was modified to not include the `h3` prefix.
+
 ## [1.3.18](https://github.com/adobe/helix-content-bus/compare/v1.3.17...v1.3.18) (2021-08-01)
 
 
