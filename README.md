@@ -2,6 +2,8 @@
 
 > Serverless action that pushes helix-content-proxy into a storage service
 
+**Note**: The content-bus action is no longer used. its functionality is now embedded in helix-admin.
+
 ## Status
 [![codecov](https://img.shields.io/codecov/c/github/adobe/helix-content-bus.svg)](https://codecov.io/gh/adobe/helix-content-bus)
 [![CircleCI](https://img.shields.io/circleci/project/github/adobe/helix-content-bus.svg)](https://circleci.com/gh/adobe/helix-content-bus)
